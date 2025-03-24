@@ -31,7 +31,7 @@ export async function signIn(
         return { error: error.message };
     }
 
-    redirect("/date-with-novels/dashboard");
+    redirect("/dashboard");
 }
 
 export async function signOut() {
