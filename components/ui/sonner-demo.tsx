@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 
 export function SonnerDemo() {
     return (
-        <div className="flex flex-row items-start gap-4">
+        <div className="flex flex-col lg:flex-row items-start gap-4">
             <Button
                 variant="outline"
                 onClick={() =>
