@@ -44,6 +44,24 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.57 0.22 260);
+
+
+    --toast-success-bg: #d4edda;
+    --toast-success-text: #155724;
+    --toast-success-border: #c3e6cb;
+
+    --toast-warning-bg: #fff3cd;
+    --toast-warning-text: #856404;
+    --toast-warning-border: #ffeeba;
+
+    --toast-error-bg: #f8d7da;
+    --toast-error-text: #721c24;
+    --toast-error-border: #f5c6cb;
+
+    --toast-info-bg: #6cbfff;
+    --toast-info-text: #004f9f;
+    --toast-info-border: #6cbfff;
+
   }
 
   .dark {

@@ -43,7 +43,7 @@ export default async function RootLayout({
         >
           <ActiveThemeProvider initialTheme={activeThemeValue}>
             {children}
-            <Toaster />
+            <Toaster richColors />
           </ActiveThemeProvider>
         </ThemeProvider>
       </body>
