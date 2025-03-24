@@ -8,6 +8,14 @@ export const THEMES = [
         },
     },
     {
+        name: "Blue",
+        value: "blue",
+        colors: {
+            light: "oklch(0.43 0.18 259)", // medium blue for light mode
+            dark: "oklch(0.9 0.02 260)",   // lighter blue for dark mode highlights
+        },
+    },
+    {
         name: "Neutral",
         value: "neutral",
         colors: {
@@ -48,8 +56,8 @@ export const THEMES = [
         },
     },
     {
-        name: "Blue",
-        value: "blue",
+        name: "Square",
+        value: "square",
         colors: {
             light: "oklch(0.488 0.243 264.376)",
             dark: "oklch(0.488 0.243 264.376)",
