@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/sidebar"
 import { signOut } from "@/app/actions/auth"
 import { redirect } from "next/navigation"
+import { useState } from "react"
+import { Button } from "./ui/button"
 
 export function NavUser({
     user,
@@ -40,11 +42,15 @@ export function NavUser({
         email: string
     }
 }) {
+    const [isLoading, setIsLoading] = useState(false)
+
     const { isMobile } = useSidebar()
 
     const handleLogout = () => {
+        setIsLoading(true)
         signOut()
         redirect("/");
+        setIsLoading(false)
     }
 
     return (
@@ -107,8 +113,10 @@ export function NavUser({
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator /> */}
                         <DropdownMenuItem onClick={handleLogout}>
-                            <LogOut />
-                            Log out
+                            <Button loading={isLoading} size="sm" className="w-full font-bold bg-red-600 hover:bg-red-700 focus:ring-red-500 text-red-50">
+                                <LogOut className="text-red-100 font-bold" strokeWidth={2} />
+                                Log out
+                            </Button>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

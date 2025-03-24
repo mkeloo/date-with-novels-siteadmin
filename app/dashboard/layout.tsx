@@ -11,6 +11,7 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Card } from "@/components/ui/card"
+import TimeAndCalendar from "@/components/siteadmin/Navbar/TimeAndCalendar"
 
 export default async function AppLayout({
     children,
@@ -33,8 +34,10 @@ export default async function AppLayout({
                         />
                         <NavHeader />
                         <div className="ml-auto flex items-center gap-2">
+                            <TimeAndCalendar />
                             <ThemeSelector />
                             <ModeSwitcher />
+
                         </div>
                     </div>
                 </header>

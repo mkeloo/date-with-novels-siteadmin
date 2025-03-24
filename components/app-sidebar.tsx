@@ -305,7 +305,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         ))}
                     </SidebarMenu>
                 </SidebarGroup> */}
-                <SidebarGroup className="px-4 group-data-[collapsible=icon]:p-2 mt-2 gap-3">
+                <SidebarGroup className="px-4 group-data-[collapsible=icon]:p-2  gap-4">
                     {data.navSecondary.map((section) => (
                         <div key={section.title}>
                             <SidebarGroupLabel>{section.title}</SidebarGroupLabel>

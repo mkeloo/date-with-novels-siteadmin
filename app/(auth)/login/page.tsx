@@ -1,5 +1,5 @@
 "use client";
-import React, { useActionState, useState } from "react";
+import React, { useActionState, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ async function signInAction(
 }
 
 export default function LoginPage() {
+    const [isLoading, setIsLoading] = useState(false);
     const [state, formAction] = useActionState(signInAction, null);
     const [email, setEmail] = useState("");
 
@@ -24,10 +25,25 @@ export default function LoginPage() {
             setEmail(value);
         }
     };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        setIsLoading(true);
+        // allow default action behavior to proceed (trigger useActionState)
+    };
+
+    // Stop loading when error state changes (or success, depending on your auth flow)
+    useEffect(() => {
+        if (state) {
+            setIsLoading(false);
+        }
+    }, [state]);
+
+
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-900">
             <form
                 action={formAction}
+                onSubmit={handleSubmit}
                 className="p-8 border-2 border-muted/80 rounded-xl shadow-lg w-96 bg-black"
             >
                 <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
@@ -55,7 +71,7 @@ export default function LoginPage() {
                             {state.error}
                         </p>
                     )}
-                    <Button type="submit" className="w-full">
+                    <Button loading={isLoading} type="submit" className="w-full">
                         Log In
                     </Button>
                 </div>

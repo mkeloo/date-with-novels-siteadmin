@@ -15,23 +15,35 @@ export function NavHeader() {
 
     return (
         <NavigationMenu className="hidden sm:flex">
-            {/* <NavigationMenuList className="gap-2 *:data-[slot=navigation-menu-item]:h-7 **:data-[slot=navigation-menu-link]:py-1 **:data-[slot=navigation-menu-link]:font-medium">
+            <NavigationMenuList className="gap-2 *:data-[slot=navigation-menu-item]:h-7 **:data-[slot=navigation-menu-link]:py-1 **:data-[slot=navigation-menu-link]:font-medium">
                 <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                        <Link
+                            href="https://datewithnovels.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-row items-center"
+                        >
+                            Live Website
+                        </Link>
+                    </NavigationMenuLink>
+                </NavigationMenuItem>
+                {/* <NavigationMenuItem>
                     <NavigationMenuLink asChild data-active={pathname === "/"}>
                         <Link href="/">Home</Link>
                     </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
+                </NavigationMenuItem> */}
+                {/* <NavigationMenuItem>
                     <NavigationMenuLink asChild data-active={pathname === "/charts"}>
                         <Link href="/charts">Charts</Link>
                     </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
+                </NavigationMenuItem> */}
+                {/* <NavigationMenuItem>
                     <NavigationMenuLink asChild data-active={pathname === "/forms"}>
                         <Link href="/forms">Forms</Link>
                     </NavigationMenuLink>
-                </NavigationMenuItem>
-            </NavigationMenuList> */}
+                </NavigationMenuItem> */}
+            </NavigationMenuList>
         </NavigationMenu>
     )
 }
