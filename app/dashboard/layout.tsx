@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Card } from "@/components/ui/card"
 import TimeAndCalendar from "@/components/siteadmin/Navbar/TimeAndCalendar"
+import ViewTransitionWrapper from "@/components/reusable/ViewTransitionWrapper"
 
 export default async function AppLayout({
     children,
@@ -43,7 +44,9 @@ export default async function AppLayout({
                 </header>
                 {/* Main Content Area */}
                 <Card className="p-4 min-h-[calc(100vh-4rem)] w-full z-1">
-                    {children}
+                    <ViewTransitionWrapper>
+                        {children}
+                    </ViewTransitionWrapper>
                 </Card>
             </SidebarInset>
         </SidebarProvider>

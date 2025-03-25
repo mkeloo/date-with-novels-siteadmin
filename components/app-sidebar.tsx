@@ -189,17 +189,17 @@ const data = {
             items: [
                 {
                     title: "Orders",
-                    url: "/dashboard/sales-management/vapes",
+                    url: "/dashboard/sales-management/orders",
                     icon: ShoppingCart,
                 },
                 {
                     title: "Customers",
-                    url: "/dashboard/sales-management/hemp-flowers",
+                    url: "/dashboard/sales-management/customers",
                     icon: Users,
                 },
                 {
                     title: "Transactions",
-                    url: "/dashboard/sales-management/deals-&-promos",
+                    url: "/dashboard/sales-management/transactions",
                     icon: DollarSign,
                 },
             ],

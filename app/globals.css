@@ -167,42 +167,94 @@
   }
 }
 
+@layer utilities {
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: hsl(var(--muted));
+    /* keeps Tailwind theme compatibility */
+  }
+
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    height: 100%;
+    width: 150%;
+    animation: shimmer 0.8s infinite;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.08),
+        transparent);
+  }
+
+  .dark .shimmer::after {
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.08),
+        transparent);
+  }
+
+  /* Light mode shimmer line (dark on light) */
+  :not(.dark) .shimmer::after {
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(0, 0, 0, 0.06),
+        transparent);
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
+/* Page Transition */
+/* View Transition Timing */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 180ms;
+  animation-duration: 250ms;
   animation-timing-function: ease-in-out;
 }
 
+/* Old page dims and blurs out */
 ::view-transition-old(root) {
   z-index: 1;
-  animation-name: fadeOutPulse;
+  animation-name: fadeOutDimBlur;
 }
 
+/* New page fades in with subtle shimmer + clarity */
 ::view-transition-new(root) {
   z-index: 9999;
-  animation-name: fadeInPulse;
+  animation-name: fadeInShimmerBlur;
 }
 
-@keyframes fadeOutPulse {
+@keyframes fadeOutDimBlur {
   0% {
     opacity: 1;
-    filter: brightness(1);
+    filter: brightness(1) blur(0);
   }
 
   100% {
-    opacity: 0;
-    filter: brightness(1.05);
+    opacity: 0.6;
+    filter: brightness(0.95) blur(2px);
   }
 }
 
-@keyframes fadeInPulse {
+@keyframes fadeInShimmerBlur {
   0% {
     opacity: 0;
-    filter: brightness(1.1);
+    filter: brightness(1.05) blur(3px);
   }
 
   100% {
     opacity: 1;
-    filter: brightness(1);
+    filter: brightness(1) blur(0);
   }
 }
