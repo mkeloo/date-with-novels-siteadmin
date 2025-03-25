@@ -3,16 +3,16 @@ export const THEMES = [
         name: "Default",
         value: "default",
         colors: {
-            light: "oklch(1 0 0)",
-            dark: "oklch(0.145 0 0)",
+            light: "oklch(0.43 0.18 259)", // medium blue for light mode
+            dark: "oklch(0.9 0.02 260)",   // lighter blue for dark mode highlights
         },
     },
     {
-        name: "Blue",
-        value: "blue",
+        name: "Black",
+        value: "black",
         colors: {
-            light: "oklch(0.43 0.18 259)", // medium blue for light mode
-            dark: "oklch(0.9 0.02 260)",   // lighter blue for dark mode highlights
+            light: "oklch(1 0 0)",
+            dark: "oklch(0.145 0 0)",
         },
     },
     {
