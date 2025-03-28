@@ -43,3 +43,11 @@ export default function Page() {
         </>
     )
 }
+
+
+import { buildTitle } from "@/lib/functions"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+    title: buildTitle("Dashboard"),
+}
