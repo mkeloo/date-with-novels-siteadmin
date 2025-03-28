@@ -205,17 +205,17 @@ const data = {
             ],
         },
         {
-            title: "Product Categories",
+            title: "Product Settings",
             url: "#",
             items: [
                 {
                     title: "Package Tiers",
-                    url: "/dashboard/product-categories/package-tiers",
+                    url: "/dashboard/product-settings/package-tiers",
                     icon: Package,
                 },
                 {
-                    title: "Book Genres",
-                    url: "/dashboard/product-categories/book-genres",
+                    title: "Genres & Themes",
+                    url: "/dashboard/product-settings/genres-themes",
                     icon: Book,
                 },
             ],
