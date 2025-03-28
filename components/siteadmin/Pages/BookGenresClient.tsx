@@ -1,12 +1,26 @@
-"use client";
+"use client"
 
-import React, { useState } from 'react'
-import { Dialog, DialogContent, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog'
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
+import React, { useEffect, useState } from "react"
+import {
+    getGenres,
+    createGenre,
+    updateGenre,
+    deleteGenre,
+    Genre,
+} from "@/app/actions/siteadmin/genres"
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogTrigger,
+    DialogClose,
+} from "@/components/ui/dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
+
 
 interface GenreDialogProps {
     trigger: React.ReactNode
@@ -29,117 +43,125 @@ function GenreDialog({ trigger, title, children }: GenreDialogProps) {
 }
 
 export default function BookGenresPage() {
-    const [genres, setGenres] = useState<string[]>([
-        'Fantasy',
-        'Sci-Fi',
-        'Horror',
-    ])
-    const [newGenre, setNewGenre] = useState('')
-    const [editingIndex, setEditingIndex] = useState<number | null>(null)
-    const [editValue, setEditValue] = useState('')
-    const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
+    const [genres, setGenres] = useState<Genre[]>([])
+    const [newGenre, setNewGenre] = useState("")
+    const [editing, setEditing] = useState<{ id: number; name: string } | null>(null)
+    const [deletingId, setDeletingId] = useState<number | null>(null)
 
-    const handleCreate = () => {
+    useEffect(() => {
+        const fetchGenres = async () => {
+            const result = await getGenres()
+            if (result) setGenres(result)
+        }
+
+        fetchGenres()
+    }, [])
+
+    const handleCreate = async () => {
         if (!newGenre.trim()) return
-        setGenres(prev => [...prev, newGenre.trim()])
-        console.log('Genre Created:', newGenre)
-        setNewGenre('')
+        const created = await createGenre(newGenre.trim())
+        if (created) {
+            setGenres((prev) => [...prev, created])
+            setNewGenre("")
+        }
     }
 
-    const handleUpdate = () => {
-        if (editingIndex === null || !editValue.trim()) return
-        const updated = [...genres]
-        updated[editingIndex] = editValue.trim()
-        setGenres(updated)
-        console.log('Genre Updated:', editValue)
-        setEditingIndex(null)
-        setEditValue('')
+    const handleUpdate = async () => {
+        if (!editing?.name.trim()) return
+        const updated = await updateGenre(editing.id, editing.name.trim())
+        if (updated) {
+            setGenres((prev) =>
+                prev.map((g) => (g.id === editing.id ? { ...g, genre_name: editing.name } : g))
+            )
+            setEditing(null)
+        }
     }
 
-    const handleDelete = () => {
-        if (deleteIndex === null) return
-        const deleted = genres[deleteIndex]
-        const updated = genres.filter((_, i) => i !== deleteIndex)
-        setGenres(updated)
-        console.log('Genre Deleted:', deleted)
-        setDeleteIndex(null)
+    const handleDelete = async () => {
+        if (deletingId === null) return
+        const success = await deleteGenre(deletingId)
+        if (success) {
+            setGenres((prev) => prev.filter((g) => g.id !== deletingId))
+            setDeletingId(null)
+        }
     }
 
     return (
         <Card className="p-6 space-y-6">
             <Card className="p-4 flex flex-col md:flex-row items-center justify-between">
                 <h2 className="text-lg font-semibold">Book Genres</h2>
-
-                {/* Create Genre Dialog */}
                 <GenreDialog trigger={<Button>Add Genre</Button>} title="Create Genre">
                     <Label htmlFor="newGenre">New Genre</Label>
                     <Input
                         id="newGenre"
                         value={newGenre}
-                        onChange={e => setNewGenre(e.target.value)}
+                        onChange={(e) => setNewGenre(e.target.value)}
                         placeholder="e.g. Mystery"
                     />
-                    <Button onClick={handleCreate}>Create</Button>
+                    <DialogClose asChild>
+                        <Button onClick={handleCreate}>Create</Button>
+                    </DialogClose>
                 </GenreDialog>
             </Card>
 
-            {/* Genre List */}
             <ul className="space-y-3">
-                {genres.map((genre, i) => (
+                {genres.map((genre) => (
                     <li
-                        key={i}
+                        key={genre.id}
                         className="flex items-center justify-between p-3 bg-muted rounded-md"
                     >
-                        <span>{genre}</span>
+                        <span>{genre.genre_name}</span>
                         <div className="flex gap-2">
-                            {/* Edit Genre Dialog */}
                             <GenreDialog
                                 trigger={
                                     <Button
                                         variant="outline"
-                                        onClick={() => {
-                                            setEditingIndex(i)
-                                            setEditValue(genre)
-                                        }}
+                                        onClick={() =>
+                                            setEditing({ id: genre.id, name: genre.genre_name })
+                                        }
                                     >
                                         Edit
                                     </Button>
                                 }
                                 title="Edit Genre"
                             >
-                                <Label htmlFor={`edit-${i}`}>Edit Genre</Label>
+                                <Label htmlFor={`edit-${genre.id}`}>Edit Genre</Label>
                                 <Input
-                                    id={`edit-${i}`}
-                                    value={editValue}
-                                    onChange={e => setEditValue(e.target.value)}
+                                    id={`edit-${genre.id}`}
+                                    value={editing?.name || ""}
+                                    onChange={(e) =>
+                                        setEditing((prev) =>
+                                            prev ? { ...prev, name: e.target.value } : prev
+                                        )
+                                    }
                                 />
-                                <Button onClick={handleUpdate}>Update</Button>
+                                <DialogClose asChild>
+                                    <Button onClick={handleUpdate}>Update</Button>
+                                </DialogClose>
                             </GenreDialog>
 
-                            {/* Delete Genre Confirm Dialog */}
                             <GenreDialog
                                 trigger={
                                     <Button
                                         variant="destructive"
-                                        onClick={() => setDeleteIndex(i)}
+                                        onClick={() => setDeletingId(genre.id)}
                                     >
                                         Delete
                                     </Button>
                                 }
                                 title="Confirm Delete"
                             >
-                                <p className='text-center'>Are you sure you want to delete "{genre}"?</p>
-                                <div className="flex items-center justify-center gap-4">
+                                <p className="text-center">
+                                    Are you sure you want to delete "{genre.genre_name}"?
+                                </p>
+                                <div className="flex justify-center gap-4">
                                     <DialogClose asChild>
                                         <Button variant="destructive" onClick={handleDelete}>
                                             Confirm Delete
                                         </Button>
                                     </DialogClose>
                                     <DialogClose asChild>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setDeleteIndex(null)}
-                                        >
+                                        <Button variant="outline" onClick={() => setDeletingId(null)}>
                                             Cancel
                                         </Button>
                                     </DialogClose>
