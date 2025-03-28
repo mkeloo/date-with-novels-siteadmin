@@ -254,11 +254,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader className="w-full flex items-center justify-center pt-4">
-                <SidebarGroup className="py-0">
+                <SidebarGroup className="py-0  group-data-[collapsible=icon]:p-1">
                     <SidebarGroupContent className="w-full flex flex-row items-center justify-start gap-x-4">
                         {/* Ensure the Store icon always remains visible */}
                         {data.company.logo && (
-                            <data.company.logo className="h-6 w-6 shrink-0" />
+                            <a href="/dashboard" className="flex items-center justify-center group-data-[collapsible=icon]:mr-2  group-data-[collapsible=icon]:rounded-md group-data-[collapsible=icon]:bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
+                                <data.company.logo className="h-6 w-6 shrink-0" />
+                            </a>
                         )}
 
                         {/* Hide the title when the sidebar is collapsed */}
