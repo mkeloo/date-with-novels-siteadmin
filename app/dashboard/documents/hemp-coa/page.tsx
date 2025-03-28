@@ -6,7 +6,6 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { coaBaseURL, hempCOA } from "@/lib/index";
 import { fetchAllHempLabCertificates, fetchCertificatesURL, HempLabCertificates } from "../../../actions/hempLabCOA";
 import { QRCode } from "react-qrcode-logo";
 import inhalebaylogo from "@/assets/InhaleBayLogo.svg";
