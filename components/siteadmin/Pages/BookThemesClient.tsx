@@ -20,15 +20,16 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { generateRandomGradient } from "@/lib/functions"
 
 
-interface GenreDialogProps {
+interface ThemeDialogProps {
     trigger: React.ReactNode
     title: string
     children: React.ReactNode
 }
 
-function GenreDialog({ trigger, title, children }: GenreDialogProps) {
+function ThemeDialog({ trigger, title, children }: ThemeDialogProps) {
     return (
         <Dialog>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -49,12 +50,12 @@ export default function BookThemesPage() {
     const [deletingId, setDeletingId] = useState<number | null>(null)
 
     useEffect(() => {
-        const fetchGenres = async () => {
+        const fetchThemes = async () => {
             const result = await getThemes()
             if (result) setThemes(result)
         }
 
-        fetchGenres()
+        fetchThemes()
     }, [])
 
     const handleCreate = async () => {
@@ -90,10 +91,10 @@ export default function BookThemesPage() {
         <Card className="w-full p-6 space-y-6">
             <Card className="p-4 flex flex-col md:flex-row items-center justify-between">
                 <h2 className="text-lg font-semibold">Package Themes</h2>
-                <GenreDialog trigger={<Button>Add Theme</Button>} title="Create Genre">
-                    <Label htmlFor="newGenre">New Theme</Label>
+                <ThemeDialog trigger={<Button>Add Theme</Button>} title="Create Theme">
+                    <Label htmlFor="newTheme">New Theme</Label>
                     <Input
-                        id="newGenre"
+                        id="newTheme"
                         value={newTheme}
                         onChange={(e) => setNewTheme(e.target.value)}
                         placeholder="e.g. Horror"
@@ -101,7 +102,7 @@ export default function BookThemesPage() {
                     <DialogClose asChild>
                         <Button onClick={handleCreate}>Create</Button>
                     </DialogClose>
-                </GenreDialog>
+                </ThemeDialog>
             </Card>
 
             <ul className="space-y-3">
@@ -112,7 +113,7 @@ export default function BookThemesPage() {
                     >
                         <span>{theme.theme_name}</span>
                         <div className="flex gap-2">
-                            <GenreDialog
+                            <ThemeDialog
                                 trigger={
                                     <Button
                                         variant="outline"
@@ -123,7 +124,7 @@ export default function BookThemesPage() {
                                         Edit
                                     </Button>
                                 }
-                                title="Edit Genre"
+                                title="Edit Theme"
                             >
                                 <Label htmlFor={`edit-${theme.id}`}>Edit Theme</Label>
                                 <Input
@@ -138,9 +139,9 @@ export default function BookThemesPage() {
                                 <DialogClose asChild>
                                     <Button onClick={handleUpdate}>Update</Button>
                                 </DialogClose>
-                            </GenreDialog>
+                            </ThemeDialog>
 
-                            <GenreDialog
+                            <ThemeDialog
                                 trigger={
                                     <Button
                                         variant="destructive"
@@ -166,7 +167,7 @@ export default function BookThemesPage() {
                                         </Button>
                                     </DialogClose>
                                 </div>
-                            </GenreDialog>
+                            </ThemeDialog>
                         </div>
                     </li>
                 ))}
