@@ -8,8 +8,10 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-    return <div className="w-full h-full p-4 flex flex-col lg:flex-row items-start justify-between gap-4">
-        <BookThemesPage />
-        <BookGenresPage />
-    </div>
+    return (
+        <div className="w-full h-full flex flex-col lg:flex-row items-stretch justify-between gap-4">
+            <BookThemesPage />
+            <BookGenresPage />
+        </div>
+    )
 }

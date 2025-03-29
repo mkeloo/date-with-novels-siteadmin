@@ -11,7 +11,7 @@ import {
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DialogClose } from "@/components/ui/dialog"
-import ThemeCard from "@/components/reusable/ThemeCard"
+import CardWallpaper from "@/components/reusable/CardWallpaper"
 import ThemeForm from "@/components/reusable/ThemeForm"
 import ThemeDialog from "@/components/reusable/ThemeDialog"
 
@@ -35,31 +35,32 @@ export default function BookThemesPage() {
         getThemes().then(setThemes)
     }, [])
 
-    // CREATE
+    // CREATE handler
     const handleCreateSubmit = async () => {
         if (!newThemeName.trim()) return
         const created = await createTheme(newThemeName.trim(), newEmojis, newColor)
         if (created) {
             setThemes((prev) => [...prev, created])
-            // reset
             setNewThemeName("")
             setNewColor("#ff0000")
             setNewEmojis([])
             setIsCreateOpen(false)
         }
     }
+
     const addNewEmoji = (emoji: string) => {
         if (newEmojis.length < 4) {
             setNewEmojis((prev) => [...prev, emoji])
         }
     }
+
     const removeNewEmoji = (idx: number) => {
         const updated = [...newEmojis]
         updated.splice(idx, 1)
         setNewEmojis(updated)
     }
 
-    // EDIT
+    // EDIT handlers
     const handleEditOpen = (theme: Theme) => {
         setEditing({
             ...theme,
@@ -68,6 +69,7 @@ export default function BookThemesPage() {
         })
         setIsEditOpen(true)
     }
+
     const handleEditSubmit = async () => {
         if (!editing) return
         const updated = await updateTheme(
@@ -82,24 +84,24 @@ export default function BookThemesPage() {
             setEditing(null)
         }
     }
+
     const addEditEmoji = (emoji: string) => {
         if (!editing) return
         if (editing.emoji_list!.length < 4) {
             setEditing((prev) =>
-                prev
-                    ? { ...prev, emoji_list: [...prev.emoji_list!, emoji] }
-                    : prev
+                prev ? { ...prev, emoji_list: [...prev.emoji_list!, emoji] } : prev
             )
         }
     }
+
     const removeEditEmoji = (idx: number) => {
         if (!editing) return
         const updated = [...editing.emoji_list!]
         updated.splice(idx, 1)
-        setEditing((prev) => prev && { ...prev, emoji_list: updated })
+        setEditing((prev) => (prev ? { ...prev, emoji_list: updated } : prev))
     }
 
-    // DELETE
+    // DELETE handler
     const handleDeleteConfirm = async () => {
         if (deletingId === null) return
         const success = await deleteTheme(deletingId)
@@ -136,12 +138,15 @@ export default function BookThemesPage() {
             </ThemeDialog>
 
             {/* THEME LIST */}
-            <div className="space-y-3">
+            <div className="space-y-3 px-4 h-full max-h-[540px] overflow-y-auto no-scrollbar">
                 {themes.map((theme) => (
-                    <ThemeCard
+                    <CardWallpaper
                         key={theme.id}
-                        theme={theme}
-                        onEdit={handleEditOpen}
+                        id={theme.id}
+                        displayName={theme.theme_name}
+                        emojiList={theme.emoji_list}
+                        backgroundColor={theme.background_color}
+                        onEdit={() => handleEditOpen(theme)}
                         onDelete={(id) => setDeletingId(id)}
                     />
                 ))}
@@ -161,11 +166,11 @@ export default function BookThemesPage() {
                         mode="edit"
                         themeName={editing.theme_name}
                         setThemeName={(val) =>
-                            setEditing((prev) => prev && { ...prev, theme_name: val })
+                            setEditing((prev) => (prev ? { ...prev, theme_name: val } : prev))
                         }
                         color={editing.background_color || "#333333"}
                         setColor={(val) =>
-                            setEditing((prev) => prev && { ...prev, background_color: val })
+                            setEditing((prev) => (prev ? { ...prev, background_color: val } : prev))
                         }
                         emojis={editing.emoji_list || []}
                         addEmoji={addEditEmoji}

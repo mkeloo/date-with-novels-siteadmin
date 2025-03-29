@@ -43,7 +43,7 @@ export default async function AppLayout({
                     </div>
                 </header>
                 {/* Main Content Area */}
-                <Card className="p-4 min-h-[calc(100vh-4rem)] w-full z-1">
+                <Card className="h-full p-4 min-h-[calc(100vh-4rem)] w-full z-1">
                     <ViewTransitionWrapper>
                         {children}
                     </ViewTransitionWrapper>
