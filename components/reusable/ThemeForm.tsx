@@ -42,8 +42,8 @@ export default function ThemeForm({
     return (
         <div className="space-y-4 mr-4 mt-5">
             {/* Header row with form title & submit button */}
-            <div className="w-full flex items-center justify-between">
-                <h2 className="text-lg font-semibold capitalize">
+            <div className="w-full flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold capitalize">
                     {mode === "create" ? "Create New Theme" : "Edit Theme"}
                 </h2>
                 <Button onClick={onSubmit}>
@@ -68,14 +68,14 @@ export default function ThemeForm({
                     type="color"
                     value={color}
                     onChange={(e) => setColor(e.target.value)}
-                    className="h-10 w-16 cursor-pointer"
+                    className="h-10 w-16 cursor-pointer rounded-full"
                 />
             </div>
 
             {/* Emojis */}
             <div className="w-full flex flex-col items-center justify-center gap-y-2">
                 <Label>Add up to 4 emojis</Label>
-                <div className="flex gap-3 flex-wrap mt-2">
+                <div className="flex gap-3 flex-wrap my-2">
                     {emojis.map((emoji, idx) => (
                         <div
                             key={idx}
@@ -92,7 +92,7 @@ export default function ThemeForm({
                         </div>
                     ))}
                 </div>
-                <EmojiPicker theme={EmojiPickerTheme.DARK} onEmojiClick={handleEmojiSelect} />
+                <EmojiPicker theme={EmojiPickerTheme.DARK} lazyLoadEmojis={true} onEmojiClick={handleEmojiSelect} />
             </div>
         </div>
     )
