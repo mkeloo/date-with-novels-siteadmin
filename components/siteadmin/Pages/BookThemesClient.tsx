@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react"
 import {
-    getGenres,
-    createGenre,
-    updateGenre,
-    deleteGenre,
-    Genre,
-} from "@/app/actions/siteadmin/genres"
+    getThemes,
+    createTheme,
+    updateTheme,
+    deleteTheme,
+    Theme,
+} from "@/app/actions/siteadmin/themes"
 import {
     Dialog,
     DialogContent,
@@ -42,36 +42,36 @@ function GenreDialog({ trigger, title, children }: GenreDialogProps) {
     )
 }
 
-export default function BookGenresPage() {
-    const [genres, setGenres] = useState<Genre[]>([])
-    const [newGenre, setNewGenre] = useState("")
+export default function BookThemesPage() {
+    const [themes, setThemes] = useState<Theme[]>([])
+    const [newTheme, setNewTheme] = useState("")
     const [editing, setEditing] = useState<{ id: number; name: string } | null>(null)
     const [deletingId, setDeletingId] = useState<number | null>(null)
 
     useEffect(() => {
         const fetchGenres = async () => {
-            const result = await getGenres()
-            if (result) setGenres(result)
+            const result = await getThemes()
+            if (result) setThemes(result)
         }
 
         fetchGenres()
     }, [])
 
     const handleCreate = async () => {
-        if (!newGenre.trim()) return
-        const created = await createGenre(newGenre.trim())
+        if (!newTheme.trim()) return
+        const created = await createTheme(newTheme.trim())
         if (created) {
-            setGenres((prev) => [...prev, created])
-            setNewGenre("")
+            setThemes((prev) => [...prev, created])
+            setNewTheme("")
         }
     }
 
     const handleUpdate = async () => {
         if (!editing?.name.trim()) return
-        const updated = await updateGenre(editing.id, editing.name.trim())
+        const updated = await updateTheme(editing.id, editing.name.trim())
         if (updated) {
-            setGenres((prev) =>
-                prev.map((g) => (g.id === editing.id ? { ...g, genre_name: editing.name } : g))
+            setThemes((prev) =>
+                prev.map((g) => (g.id === editing.id ? { ...g, theme_name: editing.name } : g))
             )
             setEditing(null)
         }
@@ -79,9 +79,9 @@ export default function BookGenresPage() {
 
     const handleDelete = async () => {
         if (deletingId === null) return
-        const success = await deleteGenre(deletingId)
+        const success = await deleteTheme(deletingId)
         if (success) {
-            setGenres((prev) => prev.filter((g) => g.id !== deletingId))
+            setThemes((prev) => prev.filter((g) => g.id !== deletingId))
             setDeletingId(null)
         }
     }
@@ -89,14 +89,14 @@ export default function BookGenresPage() {
     return (
         <Card className="w-full p-6 space-y-6">
             <Card className="p-4 flex flex-col md:flex-row items-center justify-between">
-                <h2 className="text-lg font-semibold">Book Genres</h2>
-                <GenreDialog trigger={<Button>Add Genre</Button>} title="Create Genre">
-                    <Label htmlFor="newGenre">New Genre</Label>
+                <h2 className="text-lg font-semibold">Package Themes</h2>
+                <GenreDialog trigger={<Button>Add Theme</Button>} title="Create Genre">
+                    <Label htmlFor="newGenre">New Theme</Label>
                     <Input
                         id="newGenre"
-                        value={newGenre}
-                        onChange={(e) => setNewGenre(e.target.value)}
-                        placeholder="e.g. Mystery"
+                        value={newTheme}
+                        onChange={(e) => setNewTheme(e.target.value)}
+                        placeholder="e.g. Horror"
                     />
                     <DialogClose asChild>
                         <Button onClick={handleCreate}>Create</Button>
@@ -105,19 +105,19 @@ export default function BookGenresPage() {
             </Card>
 
             <ul className="space-y-3">
-                {genres.map((genre) => (
+                {themes.map((theme) => (
                     <li
-                        key={genre.id}
+                        key={theme.id}
                         className="flex items-center justify-between p-3 bg-muted rounded-md"
                     >
-                        <span>{genre.genre_name}</span>
+                        <span>{theme.theme_name}</span>
                         <div className="flex gap-2">
                             <GenreDialog
                                 trigger={
                                     <Button
                                         variant="outline"
                                         onClick={() =>
-                                            setEditing({ id: genre.id, name: genre.genre_name })
+                                            setEditing({ id: theme.id, name: theme.theme_name })
                                         }
                                     >
                                         Edit
@@ -125,9 +125,9 @@ export default function BookGenresPage() {
                                 }
                                 title="Edit Genre"
                             >
-                                <Label htmlFor={`edit-${genre.id}`}>Edit Genre</Label>
+                                <Label htmlFor={`edit-${theme.id}`}>Edit Theme</Label>
                                 <Input
-                                    id={`edit-${genre.id}`}
+                                    id={`edit-${theme.id}`}
                                     value={editing?.name || ""}
                                     onChange={(e) =>
                                         setEditing((prev) =>
@@ -144,7 +144,7 @@ export default function BookGenresPage() {
                                 trigger={
                                     <Button
                                         variant="destructive"
-                                        onClick={() => setDeletingId(genre.id)}
+                                        onClick={() => setDeletingId(theme.id)}
                                     >
                                         Delete
                                     </Button>
@@ -152,7 +152,7 @@ export default function BookGenresPage() {
                                 title="Confirm Delete"
                             >
                                 <p className="text-center">
-                                    Are you sure you want to delete "{genre.genre_name}"?
+                                    Are you sure you want to delete "{theme.theme_name}"?
                                 </p>
                                 <div className="flex justify-center gap-4">
                                     <DialogClose asChild>
