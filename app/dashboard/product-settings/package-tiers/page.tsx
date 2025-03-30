@@ -1,15 +1,114 @@
-import PackageTierFormClient from "@/components/siteadmin/Pages/PackageTierFormClient"
-import { buildTitle } from "@/lib/functions"
-import type { Metadata } from "next"
+"use client"
 
-export const metadata: Metadata = {
-    title: buildTitle("Package Tiers"),
-}
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { format } from "date-fns"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { getPackageTiers } from "../../../actions/siteadmin/packageTiers"
+import LucideIcon from "@/components/reusable/LucideIcon"
+import type { PackageTier } from "../../../actions/siteadmin/packageTiers"
 
-export default function PackageTiersPage() {
+export default function PackageTiersOverviewPage() {
+    const [tiers, setTiers] = useState<PackageTier[]>([])
+    const [loading, setLoading] = useState(true)
+
+    // Fetch tiers on mount
+    useEffect(() => {
+        const fetchTiers = async () => {
+            try {
+                const res = await getPackageTiers()
+                setTiers(res)
+            } catch (err) {
+                console.error("Failed to fetch package tiers:", err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchTiers()
+    }, [])
+
+    if (loading) return <p>Loading package tiers...</p>
+
     return (
-        <div className="w-full h-full flex flex-col lg:flex-row items-stretch justify-between gap-4">
-            <PackageTierFormClient />
+        <div className="space-y-6">
+            {/* Header + Create */}
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">Package Tiers</h1>
+                <Link href="/dashboard/product-settings/package-tiers/package-tier-form?mode=create" className="inline-block">
+                    <Button variant="outline">Create New Package</Button>
+                </Link>
+            </div>
+
+            {/* Package Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tiers.map((tier) => (
+                    <Card key={tier.id} className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold">{tier.name}</h2>
+                            <LucideIcon iconName={tier.icon_name} className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">{tier.short_description}</p>
+
+                        <div className="text-sm text-muted-foreground space-y-1">
+                            <p><strong>Tier:</strong> {tier.tier_type.replace("_", " ")}</p>
+                            <p><strong>Price:</strong> ${tier.price.toFixed(2)}</p>
+                            <p><strong>Updated:</strong> {format(new Date(tier.updated_at), "PPpp")}</p>
+                        </div>
+
+                        {/* Inline Dialog */}
+                        <Dialog>
+                            <div className="w-full flex items-center justify-between gap-2">
+                                <DialogTrigger asChild>
+                                    <Button size="sm" variant="secondary">More Info</Button>
+                                </DialogTrigger>
+
+                                <Link
+                                    href={`/dashboard/product-settings/package-tiers/package-tier-form?mode=edit&id=${tier.id}`}
+                                    className="inline-block"
+                                >
+                                    <Button size="sm" variant="secondary">Edit</Button>
+                                </Link>
+                            </div>
+                            <VisuallyHidden.Root>
+                                <DialogTitle>More Information</DialogTitle>
+                            </VisuallyHidden.Root>
+                            <DialogContent className="max-w-lg space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-semibold">{tier.name}</h2>
+                                    <LucideIcon iconName={tier.icon_name} className="w-6 h-6 text-muted-foreground" />
+                                </div>
+
+                                <div className="text-sm space-y-1">
+                                    <p><strong>Slug:</strong> {tier.slug}</p>
+                                    <p><strong>Enabled:</strong> {tier.is_enabled ? "Yes" : "No"}</p>
+                                    <p><strong>Sort Order:</strong> {tier.sort}</p>
+                                    <p><strong>Icon Name:</strong> {tier.icon_name}</p>
+                                    <p><strong>Tier Type:</strong> {tier.tier_type}</p>
+                                    <p><strong>Theme ID:</strong> {tier.theme_id ?? "None"}</p>
+                                    <p><strong>Supports Themed:</strong> {tier.supports_themed ? "Yes" : "No"}</p>
+                                    <p><strong>Supports Regular:</strong> {tier.supports_regular ? "Yes" : "No"}</p>
+                                    <p><strong>Description:</strong> {tier.short_description}</p>
+                                    <p><strong>Price:</strong> ${tier.price.toFixed(2)}</p>
+                                    <p><strong>Genres:</strong> {tier.allowed_genres.join(", ")}</p>
+                                    <p><strong>Package Contents:</strong></p>
+                                    <ul className="list-disc pl-5">
+                                        {tier.package_contents?.map((item, idx) => (
+                                            <li key={idx}>{item}</li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-xs text-muted-foreground">
+                                        Last Updated: {format(new Date(tier.updated_at), "PPpp")}
+                                    </p>
+                                </div>
+
+                            </DialogContent>
+                        </Dialog>
+                    </Card>
+                ))}
+            </div>
         </div>
     )
 }
