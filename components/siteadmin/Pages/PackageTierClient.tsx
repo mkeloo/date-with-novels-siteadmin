@@ -41,19 +41,6 @@ const GENRES = [
     "Surprise Me",
 ]
 
-const ICON_OPTIONS = [
-    "Book",
-    "Gift",
-    "Package",
-    "Heart",
-    "Smile",
-    "Star",
-    "Ghost",
-    "Bookmark",
-    "Moon",
-    "Sun",
-]
-
 export default function PackageTierClient() {
     const [isEnabled, setIsEnabled] = useState(false)
     const [tierType, setTierType] = useState("")
@@ -173,33 +160,6 @@ export default function PackageTierClient() {
                             </button>
                         ))}
                     </div>
-
-                    {/* <div>
-                        <Label>Icon</Label>
-                        <Select value={iconName} onValueChange={setIconName}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Icon" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {ICON_OPTIONS.map((icon) => (
-                                    <SelectItem key={icon} value={icon}>
-                                        <div className="flex items-center gap-2">
-                                            <Suspense fallback={<span>...</span>}>
-                                                {
-                                                    React.createElement(
-                                                        require("lucide-react")[icon as keyof typeof import("lucide-react")],
-                                                        { className: "w-4 h-4" }
-                                                    )
-                                                }
-                                            </Suspense>
-                                            <span>{icon}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div> */}
-
 
                     <div className="">
                         <Label className="flex items-center justify-between">
