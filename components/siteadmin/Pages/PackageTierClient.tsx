@@ -16,6 +16,7 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select"
+import ExampleListInput from "@/components/reusable/SortableList/ExampleListInput"
 
 // Dummy data
 const PACKAGE_TIERS = [
@@ -225,7 +226,7 @@ export default function PackageTierClient() {
 
                 </Card>
 
-                {/* Price & Icon */}
+                {/* Price Description */}
                 <Card className="p-4">
                     <h2 className="text-lg font-semibold">Visuals & Pricing</h2>
 
@@ -255,7 +256,10 @@ export default function PackageTierClient() {
 
                 </Card>
 
+            </div>
 
+            <div>
+                <ExampleListInput />
             </div>
 
             {/* Save Button */}
