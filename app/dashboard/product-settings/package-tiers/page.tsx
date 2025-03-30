@@ -1,4 +1,4 @@
-import PackageTierClient from "@/components/siteadmin/Pages/PackageTierClient"
+import PackageTierFormClient from "@/components/siteadmin/Pages/PackageTierFormClient"
 import { buildTitle } from "@/lib/functions"
 import type { Metadata } from "next"
 
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function Page() {
     return (
         <div className="w-full h-full flex flex-col lg:flex-row items-stretch justify-between gap-4">
-            <PackageTierClient />
+            <PackageTierFormClient />
         </div>
     )
 }

@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { cn, slugify } from "@/lib/utils"
-import type { ComponentType } from "react"
 
 import { Card } from "@/components/ui/card"
 import {
@@ -42,7 +41,7 @@ const GENRES = [
     "Surprise Me",
 ]
 
-export default function PackageTierClient() {
+export default function PackageTierFormClient() {
     const [isEnabled, setIsEnabled] = useState(false)
     const [tierType, setTierType] = useState("")
     const [theme, setTheme] = useState("")
@@ -52,33 +51,12 @@ export default function PackageTierClient() {
     const [price, setPrice] = useState("")
     const [genres, setGenres] = useState<string[]>([])
     const [iconName, setIconName] = useState("Book")
-    const [LucideIcon, setLucideIcon] = useState<React.ComponentType<any> | null>(null)
 
 
     useEffect(() => {
         setSlug(slugify(title + " " + (theme ? THEMES.find(t => t.value === theme)?.label : "")))
     }, [title, theme])
 
-
-    useEffect(() => {
-        const loadIcon = async () => {
-            try {
-                const mod = await import("lucide-react")
-                const Icon = mod[iconName as keyof typeof mod]
-
-                // Only set if it's a valid component
-                if (typeof Icon === "function") {
-                    setLucideIcon(() => Icon as ComponentType<any>)
-                } else {
-                    setLucideIcon(null)
-                }
-            } catch {
-                setLucideIcon(null)
-            }
-        }
-
-        if (iconName) loadIcon()
-    }, [iconName])
 
     const toggleGenre = (genre: string) => {
         setGenres((prev) =>
