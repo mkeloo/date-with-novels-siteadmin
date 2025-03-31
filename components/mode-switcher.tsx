@@ -26,6 +26,7 @@ export function ModeSwitcher() {
             size="icon"
             className="group/toggle size-8"
             onClick={toggleTheme}
+            disableLoader
         >
             <SunIcon className="hidden [html.dark_&]:block" />
             <MoonIcon className="hidden [html.light_&]:block" />

@@ -85,6 +85,7 @@ export default function CMSDashboard() {
                                     size="sm"
                                     variant={days === option.value ? "default" : "outline"}
                                     onClick={() => setDays(option.value)}
+                                    disableLoader
                                 >
                                     {option.name}
                                 </Button>
