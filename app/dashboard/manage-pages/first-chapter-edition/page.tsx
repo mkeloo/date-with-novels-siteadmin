@@ -11,14 +11,14 @@ import LucideIcon from "@/components/reusable/LucideIcon"
 import { getPackageTiers } from "@/app/actions/siteadmin/packageTiers"
 import type { PackageTier } from "@/app/actions/siteadmin/packageTiers"
 
-export default function ThemedEditionPage() {
+export default function FirstChapterEditionPage() {
     const [tiers, setTiers] = useState<PackageTier[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchTiers = async () => {
             const res = await getPackageTiers()
-            const filtered = res.filter((tier) => tier.tier_type === "themed")
+            const filtered = res.filter((tier) => tier.tier_type === "first_chapter")
             setTiers(filtered)
             setLoading(false)
         }
@@ -26,11 +26,12 @@ export default function ThemedEditionPage() {
         fetchTiers()
     }, [])
 
-    if (loading) return <p>Loading themed edition packages...</p>
+    if (loading) return <p>Loading first chapter edition packages...</p>
+
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold">Themed Edition Packages</h1>
+            <h1 className="text-2xl font-bold">First Chapter Edition Packages</h1>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {tiers.map((tier) => (
@@ -67,7 +68,7 @@ export default function ThemedEditionPage() {
                                 </DialogContent>
                             </Dialog>
 
-                            <Link href={`/dashboard/manage-pages/themed-edition/${tier.slug}/add-content`}>
+                            <Link href={`/dashboard/manage-pages/first-chapter-edition/${tier.slug}/add-content`}>
                                 <Button size="sm" variant="default">Add Content</Button>
                             </Link>
                         </div>

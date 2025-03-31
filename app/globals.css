@@ -271,3 +271,34 @@
     filter: brightness(1) blur(0);
   }
 }
+
+
+
+
+/* TipTap Stuff */
+
+/* heading */
+h1 {
+  @apply text-2xl font-bold;
+}
+
+h2 {
+  @apply text-xl font-bold;
+}
+
+h3 {
+  @apply text-lg font-bold;
+}
+
+h4 {
+  @apply text-base font-bold;
+}
+
+h5 {
+  @apply text-sm font-bold;
+}
+
+/* code style */
+pre {
+  @apply p-2 bg-foreground text-background rounded-md;
+}
