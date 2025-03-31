@@ -51,15 +51,15 @@ export default function PackageTiersOverviewPage() {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">Package Tiers</h1>
                 <div className="flex items-center gap-2">
+                    <Link href="/dashboard/product-settings/package-tiers/package-tier-form?mode=create">
+                        <Button variant="outline">Create New Package</Button>
+                    </Link>
                     <Button
                         variant={showDelete ? "destructive" : "outline"}
                         onClick={() => setShowDelete((prev) => !prev)}
                     >
                         {showDelete ? "Cancel Delete" : "Delete Packages"}
                     </Button>
-                    <Link href="/dashboard/product-settings/package-tiers/package-tier-form?mode=create">
-                        <Button variant="outline">Create New Package</Button>
-                    </Link>
                 </div>
             </div>
 

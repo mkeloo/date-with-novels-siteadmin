@@ -53,13 +53,20 @@ export async function getPackageTierById(id: number): Promise<PackageTier> {
 // Create a new package tier
 export async function createPackageTier(
     payload: Omit<PackageTier, "id" | "created_at" | "updated_at">
-) {
+): Promise<PackageTier> {
     const supabase = await createClient()
 
-    const { error } = await supabase.from("package_tiers").insert(payload)
+    const { data, error } = await supabase
+        .from("package_tiers")
+        .insert(payload)
+        .select("*")
+        .single()
 
     if (error) throw error
+
     revalidatePath("/siteadmin/package-tiers")
+
+    return data as PackageTier
 }
 
 // Update an existing package tier

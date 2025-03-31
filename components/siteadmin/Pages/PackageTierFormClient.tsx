@@ -145,11 +145,13 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
 
                 setDialogData({ ...originalData, ...payload, changes })
             } else {
-                const { createPackageTier, getPackageTiers } = await import("../../../app/actions/siteadmin/packageTiers")
-                await createPackageTier(payload)
+                const { createPackageTier } = await import("../../../app/actions/siteadmin/packageTiers")
+                const newTier = await createPackageTier(payload)
 
-                const tiers = await getPackageTiers()
-                setDialogData(tiers[tiers.length - 1])
+                setDialogData({
+                    ...newTier, // Use response if it returns new data, else payload
+                    updated_at: new Date().toISOString(), // current timestamp
+                })
             }
 
             setShowDialog(true)
