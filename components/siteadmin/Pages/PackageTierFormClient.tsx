@@ -12,6 +12,7 @@ import { cn, slugify } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import ExampleListInput from "@/components/reusable/SortableList/ExampleListInput"
+import PackageContentList from "@/components/reusable/PackageContentList"
 import LucideIcon from "@/components/reusable/LucideIcon"
 import { getPackageTierById, PackageTier } from "../../../app/actions/siteadmin/packageTiers"
 
@@ -58,6 +59,8 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
     const [price, setPrice] = useState("")
     const [genres, setGenres] = useState<string[]>([])
     const [iconName, setIconName] = useState("Book")
+    const [packageContents, setPackageContents] = useState<string[]>([])
+
 
     const [showDialog, setShowDialog] = useState(false)
     const [originalData, setOriginalData] = useState<PackageTier | null>(null)
@@ -83,6 +86,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                 setPrice(data.price.toString())
                 setGenres(data.allowed_genres)
                 setIconName(data.icon_name)
+                setPackageContents(data.package_contents || [])
 
                 // Save original data for later comparison
                 setOriginalData(data)
@@ -122,7 +126,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
             supports_themed: tierType !== "classic",
             supports_regular: tierType !== "themed",
             sort: 0,
-            package_contents: [],
+            package_contents: packageContents,
         }
 
         try {
@@ -278,8 +282,12 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                     </Card>
                 </div>
 
+                {/* Package Contents List Input */}
                 <div>
-                    <ExampleListInput />
+                    <PackageContentList
+                        initialItems={packageContents}
+                        onChange={setPackageContents}
+                    />
                 </div>
 
                 <div className="flex justify-end pt-4">
@@ -326,6 +334,12 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                                         <p><strong>Description:</strong> {dialogData.short_description}</p>
                                         <p><strong>Price:</strong> ${dialogData.price.toFixed(2)}</p>
                                         <p><strong>Genres:</strong> {dialogData.allowed_genres.join(", ")}</p>
+                                        <p><strong>Package Contents:</strong></p>
+                                        <ul className="list-disc pl-5">
+                                            {dialogData.package_contents?.map((item, idx) => (
+                                                <li key={idx}>{item}</li>
+                                            ))}
+                                        </ul>
                                     </>
                                 )}
 
