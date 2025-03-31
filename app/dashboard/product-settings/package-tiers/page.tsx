@@ -83,7 +83,7 @@ export default function PackageTiersOverviewPage() {
                         <div className="w-full flex items-center justify-between gap-2">
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button size="sm" variant="secondary">More Info</Button>
+                                    <Button disableLoader size="sm" variant="secondary">More Info</Button>
                                 </DialogTrigger>
 
                                 <VisuallyHidden.Root>
