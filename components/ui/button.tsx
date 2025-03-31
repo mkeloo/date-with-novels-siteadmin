@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Loader2 } from "lucide-react"; // Add loading icon
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -36,29 +36,49 @@ const buttonVariants = cva(
   }
 )
 
+interface ButtonProps extends React.ComponentProps<"button">, VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  loading?: boolean;
+  disableLoader?: boolean;  // Optional prop to disable loader
+}
+
 function Button({
   className,
   variant,
   size,
   asChild = false,
   loading = false,
+  disableLoader = false,
   children,
+  onClick,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-    loading?: boolean;
-  }) {
+}: ButtonProps) {
+  const [isLoading, setIsLoading] = React.useState(false)
   const Comp = asChild ? Slot : "button"
+
+  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disableLoader) {
+      onClick?.(e)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await Promise.resolve(onClick?.(e))
+    } finally {
+      setTimeout(() => setIsLoading(false), 500) // Loader visible for 500ms minimum
+    }
+  }
 
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      disabled={loading || props.disabled}
+      disabled={isLoading || loading || props.disabled}
+      onClick={handleClick}
       {...props}
     >
-      {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
+      {(loading || isLoading) && <Loader2 className="mr-2 size-4 animate-spin" />}
       {children}
     </Comp>
   )

@@ -283,7 +283,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                 </div>
 
                 <div className="flex justify-end pt-4">
-                    <Button type="submit">
+                    <Button disableLoader type="submit">
                         {mode === "edit" ? "Update Package Tier" : "Create Package Tier"}
                     </Button>
                 </div>
