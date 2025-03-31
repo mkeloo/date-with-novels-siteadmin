@@ -50,6 +50,25 @@ export async function getPackageTierById(id: number): Promise<PackageTier> {
     return data as PackageTier
 }
 
+// Get a single package tier by slug
+export async function getPackageTierBySlug(slug: string): Promise<PackageTier | null> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("package_tiers")
+        .select("*")
+        .eq("slug", slug)
+        .single()
+
+    if (error) {
+        console.error("Error fetching package tier by slug:", error)
+        return null
+    }
+
+
+    return data as PackageTier
+}
+
 // Create a new package tier
 export async function createPackageTier(
     payload: Omit<PackageTier, "id" | "created_at" | "updated_at">
