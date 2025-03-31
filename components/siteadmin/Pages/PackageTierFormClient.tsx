@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn, slugify } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
@@ -36,6 +38,15 @@ type PackageTierFormClientProps = {
     packageId: string | null
 }
 
+type FieldChange = {
+    before: any
+    after: any
+}
+
+type DialogData = PackageTier & {
+    changes?: Record<string, FieldChange>
+}
+
 export default function PackageTierFormClient({ mode, packageId }: PackageTierFormClientProps) {
     const [loading, setLoading] = useState(mode === "edit")
     const [isEnabled, setIsEnabled] = useState(false)
@@ -47,6 +58,10 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
     const [price, setPrice] = useState("")
     const [genres, setGenres] = useState<string[]>([])
     const [iconName, setIconName] = useState("Book")
+
+    const [showDialog, setShowDialog] = useState(false)
+    const [originalData, setOriginalData] = useState<PackageTier | null>(null)
+    const [dialogData, setDialogData] = useState<DialogData | null>(null)
 
     const router = useRouter()
 
@@ -68,7 +83,9 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                 setPrice(data.price.toString())
                 setGenres(data.allowed_genres)
                 setIconName(data.icon_name)
-                // handle package_contents later in ExampleListInput
+
+                // Save original data for later comparison
+                setOriginalData(data)
             } catch (error) {
                 console.error("Failed to fetch package tier:", error)
             } finally {
@@ -102,22 +119,36 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
             price: parseFloat(price),
             allowed_genres: genres,
             icon_name: iconName,
-            supports_themed: tierType !== "classic", // add logic as per your needs
-            supports_regular: tierType !== "themed", // add logic as per your needs
-            sort: 0, // default or custom sort order
-            package_contents: [], // Add actual data when ready
+            supports_themed: tierType !== "classic",
+            supports_regular: tierType !== "themed",
+            sort: 0,
+            package_contents: [],
         }
 
         try {
-            if (mode === "edit" && packageId) {
+            if (mode === "edit" && packageId && originalData) {
                 const { updatePackageTier } = await import("../../../app/actions/siteadmin/packageTiers")
                 await updatePackageTier(parseInt(packageId), payload)
+
+                // Compute changes
+                const changes = Object.entries(payload).reduce((acc, [key, value]) => {
+                    const originalValue = (originalData as any)[key]
+                    if (JSON.stringify(value) !== JSON.stringify(originalValue)) {
+                        acc[key] = { before: originalValue, after: value }
+                    }
+                    return acc
+                }, {} as Record<string, FieldChange>)
+
+                setDialogData({ ...originalData, ...payload, changes })
             } else {
-                const { createPackageTier } = await import("../../../app/actions/siteadmin/packageTiers")
+                const { createPackageTier, getPackageTiers } = await import("../../../app/actions/siteadmin/packageTiers")
                 await createPackageTier(payload)
+
+                const tiers = await getPackageTiers()
+                setDialogData(tiers[tiers.length - 1])
             }
 
-            router.push("/dashboard/product-settings/package-tiers")
+            setShowDialog(true)
         } catch (error) {
             console.error("Submission error:", error)
             alert("Failed to save package tier.")
@@ -257,6 +288,61 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                     </Button>
                 </div>
             </Card>
+
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                <VisuallyHidden.Root>
+                    <DialogTitle>Confirmation</DialogTitle>
+                </VisuallyHidden.Root>
+                <DialogContent className="max-w-lg space-y-4">
+                    {dialogData && (
+                        <>
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-semibold">{dialogData.name}</h2>
+                                <LucideIcon iconName={dialogData.icon_name} className="w-6 h-6 text-muted-foreground" />
+                            </div>
+
+                            <div className="text-sm space-y-2">
+                                {mode === "edit" && dialogData.changes ? (
+                                    <>
+                                        <h3 className="font-semibold">Updated Fields:</h3>
+                                        {Object.entries(dialogData.changes).map(([key, { before, after }]) => (
+                                            <div key={key}>
+                                                <p className="font-medium capitalize">{key.replace("_", " ")}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Before: <strong>{String(before)}</strong>
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    After: <strong>{String(after)}</strong>
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        <p><strong>Slug:</strong> {dialogData.slug}</p>
+                                        <p><strong>Enabled:</strong> {dialogData.is_enabled ? "Yes" : "No"}</p>
+                                        <p><strong>Tier Type:</strong> {dialogData.tier_type}</p>
+                                        <p><strong>Theme ID:</strong> {dialogData.theme_id ?? "None"}</p>
+                                        <p><strong>Description:</strong> {dialogData.short_description}</p>
+                                        <p><strong>Price:</strong> ${dialogData.price.toFixed(2)}</p>
+                                        <p><strong>Genres:</strong> {dialogData.allowed_genres.join(", ")}</p>
+                                    </>
+                                )}
+
+                                <p className="text-xs text-muted-foreground">
+                                    Last Updated: {new Date(dialogData.updated_at).toLocaleString()}
+                                </p>
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Button onClick={() => router.push("/dashboard/product-settings/package-tiers")}>
+                                    Go Back to Overview
+                                </Button>
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
         </form>
     )
 }
