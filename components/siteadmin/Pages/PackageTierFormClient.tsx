@@ -223,7 +223,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                                     className={cn(
                                         "px-3 py-2 rounded-full border text-sm transition",
                                         genres.includes(genre)
-                                            ? "bg-blue-600 text-white border-blue-700"
+                                            ? "bg-primary text-background border-primary"
                                             : "bg-muted text-muted-foreground"
                                     )}
                                     onClick={() => toggleGenre(genre)}
