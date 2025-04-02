@@ -167,7 +167,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
 
     return (
         <form onSubmit={handleSubmit}>
-            <Card className="w-full h-full p-6 gap-4 flex flex-col">
+            <Card className="w-full h-full p-4 gap-4 flex flex-col">
                 <Card className="w-full flex flex-col lg:flex-row items-center justify-between p-4">
                     <h2 className="text-lg font-semibold">
                         {mode === "edit" ? "Edit Package" : "New Package"}
