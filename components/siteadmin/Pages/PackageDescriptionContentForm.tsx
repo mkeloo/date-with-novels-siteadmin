@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import PackageContentList from "@/components/reusable/PackageContentList"
 
@@ -22,54 +21,41 @@ export default function PackageDescriptionContentForm({
     packageId: string | null
 }) {
     const [longDesc, setLongDesc] = useState("")
-    const [contentsList, setContentsList] = useState("")
     const [disclaimer, setDisclaimer] = useState(DEFAULT_DISCLAIMER)
+    const [packageContents, setPackageContents] = useState<string[]>([])
 
     return (
-        <Card className="w-full h-full p-4 gap-4 flex flex-col">
+        <div className="w-full h-full gap-4 flex flex-col">
 
-            <Card className="p-4 gap-2 flex flex-col">
-                <h2 className="text-2xl font-semibold">Package Description Content</h2>
-                <p className="text-muted-foreground text-sm">
-                    Provide detailed information about this package including its purpose, included items, and any disclaimers.
-                </p>
-            </Card>
 
             <div className="w-full h-full flex flex-col lg:flex-row items-stretch justify-between gap-4">
+
                 {/* Editor Section */}
-                <div className="w-full lg:w-[60%] flex flex-col gap-4">
-                    <Card className="p-4 space-y-2 flex-1">
-                        <Label htmlFor="longDesc">Long Description</Label>
+                <Card className="w-full lg:w-[60%] flex flex-col gap-4 p-4">
+                    <Card className="p-4 gap-2 flex flex-col">
+                        <h2 className="text-2xl font-semibold">Package Description Content</h2>
+                        <p className="text-muted-foreground text-sm">
+                            Add package information including its purpose, included items, and any disclaimers.
+                        </p>
+                    </Card>
+                    <Card className="p-4">
+                        <h2 className="text-lg font-bold">Long Description</h2>
                         <Textarea
                             id="longDesc"
-                            rows={6}
+                            rows={10}
                             value={longDesc}
                             onChange={(e) => setLongDesc(e.target.value)}
                             placeholder="Write the main product description here..."
                         />
                     </Card>
 
-                    <Card className="p-4 space-y-2 flex-1">
-                        <Label htmlFor="contentsList">Package Contents</Label>
-                        <Textarea
-                            id="contentsList"
-                            rows={8}
-                            value={contentsList}
-                            onChange={(e) => setContentsList(e.target.value)}
-                            placeholder="List all items included in this package, one per line..."
-                        />
+                    <PackageContentList
+                        initialItems={packageContents}
+                        onChange={setPackageContents}
+                    />
 
-                        {/* Package Contents List Input */}
-                        {/* <div>
-                            <PackageContentList
-                                initialItems={packageContents}
-                                onChange={setPackageContents}
-                            />
-                        </div> */}
-                    </Card>
-
-                    <Card className="p-4 space-y-2 flex-1">
-                        <Label htmlFor="disclaimer">Disclaimer</Label>
+                    <Card className="p-4">
+                        <h2 className="text-lg font-bold">Disclaimer</h2>
                         <Textarea
                             id="disclaimer"
                             rows={10}
@@ -77,13 +63,18 @@ export default function PackageDescriptionContentForm({
                             onChange={(e) => setDisclaimer(e.target.value)}
                         />
                     </Card>
-                </div>
+                </Card>
 
                 {/* Preview Section */}
                 <div className="w-full lg:w-[40%]">
                     <Card className="p-4 space-y-4 text-sm h-full min-h-full">
-                        <h3 className="text-lg font-medium">Live Preview</h3>
+                        <Card className="p-4 gap-2 flex flex-col">
+                            <h2 className="text-2xl font-semibold">Live Preview</h2>
+                            <p className="text-muted-foreground text-sm">
+                                This is how the package description will appear to customers.
+                            </p>
 
+                        </Card>
                         <div>
                             <h4 className="font-semibold mb-1">Description</h4>
                             <p className="whitespace-pre-line text-muted-foreground">
@@ -94,8 +85,8 @@ export default function PackageDescriptionContentForm({
                         <div>
                             <h4 className="font-semibold mb-1">Contents</h4>
                             <ul className="list-disc pl-5 text-muted-foreground whitespace-pre-line">
-                                {contentsList
-                                    ? contentsList.split("\n").map((item, idx) => <li key={idx}>{item}</li>)
+                                {packageContents.length > 0
+                                    ? packageContents.map((item, idx) => <li key={idx}>{item}</li>)
                                     : <li>No contents listed.</li>}
                             </ul>
                         </div>
@@ -109,6 +100,6 @@ export default function PackageDescriptionContentForm({
                     </Card>
                 </div>
             </div>
-        </Card>
+        </div>
     )
 }

@@ -63,7 +63,7 @@ export default function PackageContentList({ initialItems, onChange }: PackageCo
     return (
         <div className="w-full h-full flex flex-col lg:flex-row gap-4 justify-center">
             {/* List Input & Sortable */}
-            <Card className="w-full lg:w-1/2 p-4 shadow-lg">
+            <Card className="w-full p-4 shadow-lg">
                 <h2 className="text-lg font-bold">Package Contents</h2>
                 <div className="flex gap-2">
                     <Input
@@ -71,7 +71,7 @@ export default function PackageContentList({ initialItems, onChange }: PackageCo
                         onChange={(e) => setNewItem(e.target.value)}
                         placeholder="Add a new package content item..."
                     />
-                    <Button onClick={handleAddOrUpdateItem}>
+                    <Button disableLoader onClick={handleAddOrUpdateItem}>
                         {editIndex !== null ? "Update" : "Add"}
                     </Button>
                 </div>
@@ -89,7 +89,7 @@ export default function PackageContentList({ initialItems, onChange }: PackageCo
             </Card>
 
             {/* Preview Panel */}
-            <Card className="w-full lg:w-1/2 p-4 shadow-lg space-y-4">
+            {/* <Card className="w-full lg:w-1/2 p-4 shadow-lg space-y-4">
                 <h2 className="text-lg font-bold">Package Contents Preview</h2>
 
                 <Tabs value={tab} onValueChange={setTab}>
@@ -112,7 +112,7 @@ export default function PackageContentList({ initialItems, onChange }: PackageCo
                         </pre>
                     </TabsContent>
                 </Tabs>
-            </Card>
+            </Card> */}
         </div>
     )
 }

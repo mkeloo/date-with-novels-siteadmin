@@ -102,6 +102,7 @@ function SortableItem({
             <div className="flex gap-2">
                 {isEditing ? (
                     <Button
+                        disableLoader
                         size="icon"
                         variant="ghost"
                         onClick={() => onSaveEdit(index, editValue)}
@@ -109,11 +110,11 @@ function SortableItem({
                         <Check className="w-4 h-4 text-green-500" />
                     </Button>
                 ) : (
-                    <Button size="icon" variant="ghost" onClick={() => onStartEdit(index)}>
+                    <Button disableLoader size="icon" variant="ghost" onClick={() => onStartEdit(index)}>
                         <Pencil className="w-4 h-4" />
                     </Button>
                 )}
-                <Button size="icon" variant="ghost" onClick={() => onDelete(index)}>
+                <Button disableLoader size="icon" variant="ghost" onClick={() => onDelete(index)}>
                     <X className="w-4 h-4 text-red-500" />
                 </Button>
             </div>
@@ -183,10 +184,10 @@ export function SortableList({
 
                         {/* Edit & Delete Buttons (Optional, disabled in overlay for better UX) */}
                         <div className="flex gap-2">
-                            <Button size="icon" variant="ghost" disabled>
+                            <Button disableLoader size="icon" variant="ghost" disabled>
                                 <Pencil className="w-4 h-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" disabled>
+                            <Button disableLoader size="icon" variant="ghost" disabled>
                                 <X className="w-4 h-4 text-red-500" />
                             </Button>
                         </div>
