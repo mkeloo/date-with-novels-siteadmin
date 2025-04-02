@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 }
 
 // This layout wraps everything under /package-tiers
-export default function PackageTiersLayout({
+export default function PackageLayout({
     children,
 }: {
     children: React.ReactNode

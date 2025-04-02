@@ -15,6 +15,7 @@ import {
     ShoppingCart,
     Users,
     DollarSign,
+    SquareLibrary,
     Package,
     Book,
     FileText,
@@ -179,9 +180,14 @@ export const data = {
             url: "#",
             items: [
                 {
+                    title: "Packages",
+                    url: "/dashboard/product-settings/packages",
+                    icon: Package,
+                },
+                {
                     title: "Package Tiers",
                     url: "/dashboard/product-settings/package-tiers",
-                    icon: Package,
+                    icon: SquareLibrary,
                 },
                 {
                     title: "Genres & Themes",

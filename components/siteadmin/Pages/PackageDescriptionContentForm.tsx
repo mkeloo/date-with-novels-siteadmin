@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import PackageContentList from "@/components/reusable/PackageContentList"
-import { getPackageTierById, PackageTier } from "../../../app/actions/siteadmin/packageTiers"
+import { getPackagesById, Packages } from "../../../app/actions/siteadmin/packages"
 
 
 const DEFAULT_DISCLAIMER = `These are new books, Never Used. It can be Hardcover, Paperback or Mass Market Paperback.
@@ -32,7 +32,7 @@ export default function PackageDescriptionContentForm({
     useEffect(() => {
         async function fetchPackageDetails(id: number) {
             try {
-                const data: PackageTier = await getPackageTierById(id)
+                const data: Packages = await getPackagesById(id)
                 // setLongDesc(data.long_description || "") // Update if long_description exists in DB
                 // setDisclaimer(data.disclaimer || DEFAULT_DISCLAIMER)
                 setPackageContents(data.package_contents || [])

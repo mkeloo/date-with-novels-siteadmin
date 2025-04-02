@@ -11,10 +11,8 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn, slugify } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import ExampleListInput from "@/components/reusable/SortableList/ExampleListInput"
-import PackageContentList from "@/components/reusable/PackageContentList"
 import LucideIcon from "@/components/reusable/LucideIcon"
-import { getPackageTierById, PackageTier } from "../../../app/actions/siteadmin/packageTiers"
+import { getPackagesById, Packages } from "../../../app/actions/siteadmin/packages"
 
 // Dummy data
 const PACKAGE_TIERS = [
@@ -34,7 +32,7 @@ const GENRES = [
     "Romance", "Mystery", "Thriller", "Young Adult Fiction", "Fantasy", "Horror", "Surprise Me"
 ]
 
-type PackageTierFormClientProps = {
+type PackagesFormClientProps = {
     mode: "create" | "edit"
     packageId: string | null
 }
@@ -44,11 +42,11 @@ type FieldChange = {
     after: any
 }
 
-type DialogData = PackageTier & {
+type DialogData = Packages & {
     changes?: Record<string, FieldChange>
 }
 
-export default function PackageTierFormClient({ mode, packageId }: PackageTierFormClientProps) {
+export default function PackagesFormClient({ mode, packageId }: PackagesFormClientProps) {
     const [loading, setLoading] = useState(mode === "edit")
     const [isEnabled, setIsEnabled] = useState(false)
     const [tierType, setTierType] = useState("")
@@ -63,7 +61,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
 
 
     const [showDialog, setShowDialog] = useState(false)
-    const [originalData, setOriginalData] = useState<PackageTier | null>(null)
+    const [originalData, setOriginalData] = useState<Packages | null>(null)
     const [dialogData, setDialogData] = useState<DialogData | null>(null)
 
     const router = useRouter()
@@ -75,9 +73,9 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
     }, [title, theme]);
 
     useEffect(() => {
-        async function fetchPackageTier(id: number) {
+        async function fetchPackages(id: number) {
             try {
-                const data: PackageTier = await getPackageTierById(id)
+                const data: Packages = await getPackagesById(id)
                 setIsEnabled(data.is_enabled)
                 setTierType(data.tier_type)
                 setTheme(data.theme_id?.toString() || "")
@@ -98,7 +96,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
         }
 
         if (mode === "edit" && packageId) {
-            fetchPackageTier(Number(packageId))
+            fetchPackages(Number(packageId))
         } else {
             setLoading(false)
         }
@@ -131,8 +129,8 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
 
         try {
             if (mode === "edit" && packageId && originalData) {
-                const { updatePackageTier } = await import("../../../app/actions/siteadmin/packageTiers")
-                await updatePackageTier(parseInt(packageId), payload)
+                const { updatePackages } = await import("../../../app/actions/siteadmin/packages")
+                await updatePackages(parseInt(packageId), payload)
 
                 // Compute changes
                 const changes = Object.entries(payload).reduce((acc, [key, value]) => {
@@ -145,8 +143,8 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
 
                 setDialogData({ ...originalData, ...payload, changes })
             } else {
-                const { createPackageTier } = await import("../../../app/actions/siteadmin/packageTiers")
-                const newTier = await createPackageTier(payload)
+                const { createPackages } = await import("../../../app/actions/siteadmin/packages")
+                const newTier = await createPackages(payload)
 
                 setDialogData({
                     ...newTier, // Use response if it returns new data, else payload

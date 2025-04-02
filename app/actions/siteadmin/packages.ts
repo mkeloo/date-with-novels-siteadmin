@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 
 // Reusable Package Tier type
-export type PackageTier = {
+export type Packages = {
     id: number
     name: string
     slug: string
@@ -24,38 +24,38 @@ export type PackageTier = {
 }
 
 // Get all package tiers
-export async function getPackageTiers(): Promise<PackageTier[]> {
+export async function getPackages(): Promise<Packages[]> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
-        .from("package_tiers")
+        .from("packages")
         .select("*")
         .order("sort", { ascending: true })
 
     if (error) throw error
-    return data as PackageTier[]
+    return data as Packages[]
 }
 
 // Get a single package tier by ID
-export async function getPackageTierById(id: number): Promise<PackageTier> {
+export async function getPackagesById(id: number): Promise<Packages> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
-        .from("package_tiers")
+        .from("packages")
         .select("*")
         .eq("id", id)
         .single()
 
     if (error) throw error
-    return data as PackageTier
+    return data as Packages
 }
 
 // Get a single package tier by slug
-export async function getPackageTierBySlug(slug: string): Promise<PackageTier | null> {
+export async function getPackagesBySlug(slug: string): Promise<Packages | null> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
-        .from("package_tiers")
+        .from("packages")
         .select("*")
         .eq("slug", slug)
         .single()
@@ -66,53 +66,53 @@ export async function getPackageTierBySlug(slug: string): Promise<PackageTier | 
     }
 
 
-    return data as PackageTier
+    return data as Packages
 }
 
 // Create a new package tier
-export async function createPackageTier(
-    payload: Omit<PackageTier, "id" | "created_at" | "updated_at">
-): Promise<PackageTier> {
+export async function createPackages(
+    payload: Omit<Packages, "id" | "created_at" | "updated_at">
+): Promise<Packages> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
-        .from("package_tiers")
+        .from("packages")
         .insert(payload)
         .select("*")
         .single()
 
     if (error) throw error
 
-    revalidatePath("/siteadmin/package-tiers")
+    revalidatePath("/siteadmin/packages")
 
-    return data as PackageTier
+    return data as Packages
 }
 
 // Update an existing package tier
-export async function updatePackageTier(
+export async function updatePackages(
     id: number,
-    updates: Partial<Omit<PackageTier, "id" | "created_at" | "updated_at" | "slug">>
+    updates: Partial<Omit<Packages, "id" | "created_at" | "updated_at" | "slug">>
 ) {
     const supabase = await createClient()
 
     const { error } = await supabase
-        .from("package_tiers")
+        .from("packages")
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq("id", id)
 
     if (error) throw error
-    revalidatePath("/siteadmin/package-tiers")
+    revalidatePath("/siteadmin/packages")
 }
 
 // Delete a package tier
-export async function deletePackageTier(id: number) {
+export async function deletePackages(id: number) {
     const supabase = await createClient()
 
     const { error } = await supabase
-        .from("package_tiers")
+        .from("packages")
         .delete()
         .eq("id", id)
 
     if (error) throw error
-    revalidatePath("/siteadmin/package-tiers")
+    revalidatePath("/siteadmin/packages")
 }
