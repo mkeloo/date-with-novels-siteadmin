@@ -272,33 +272,22 @@
   }
 }
 
+/* Page Transition End */
 
 
 
-/* TipTap Stuff */
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 
-/* heading */
-h1 {
-  @apply text-2xl font-bold;
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-h2 {
-  @apply text-xl font-bold;
-}
-
-h3 {
-  @apply text-lg font-bold;
-}
-
-h4 {
-  @apply text-base font-bold;
-}
-
-h5 {
-  @apply text-sm font-bold;
-}
-
-/* code style */
-pre {
-  @apply p-2 bg-foreground text-background rounded-md;
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }
