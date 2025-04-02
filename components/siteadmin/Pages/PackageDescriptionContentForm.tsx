@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import PackageContentList from "@/components/reusable/PackageContentList"
+import { getPackageTierById, PackageTier } from "../../../app/actions/siteadmin/packageTiers"
+
 
 const DEFAULT_DISCLAIMER = `These are new books, Never Used. It can be Hardcover, Paperback or Mass Market Paperback.
 
@@ -26,6 +28,23 @@ export default function PackageDescriptionContentForm({
 
     const [editorWidth, setEditorWidth] = useState(60) // in %
     const isDragging = useRef(false)
+
+    useEffect(() => {
+        async function fetchPackageDetails(id: number) {
+            try {
+                const data: PackageTier = await getPackageTierById(id)
+                // setLongDesc(data.long_description || "") // Update if long_description exists in DB
+                // setDisclaimer(data.disclaimer || DEFAULT_DISCLAIMER)
+                setPackageContents(data.package_contents || [])
+            } catch (error) {
+                console.error("Failed to fetch package tier details:", error)
+            }
+        }
+
+        if (mode === "edit" && packageId) {
+            fetchPackageDetails(Number(packageId))
+        }
+    }, [mode, packageId])
 
 
     const DIVIDER_WIDTH_PX = 40 // width 4px + 2*margin 2px
@@ -83,6 +102,7 @@ export default function PackageDescriptionContentForm({
                     </Card>
 
                     <PackageContentList
+                        key={packageContents.join(",")} // Forces re-render when data changes
                         initialItems={packageContents}
                         onChange={setPackageContents}
                     />

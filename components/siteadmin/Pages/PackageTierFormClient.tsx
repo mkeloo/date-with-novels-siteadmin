@@ -161,9 +161,9 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
         }
     }
 
-    if (loading) {
-        return <div className="p-4">Loading package details...</div>
-    }
+    // if (loading) {
+    //     return <div className="p-4">Loading package details...</div>
+    // }
 
     return (
         <form onSubmit={handleSubmit}>
@@ -284,14 +284,7 @@ export default function PackageTierFormClient({ mode, packageId }: PackageTierFo
                     </Card>
                 </div>
 
-                {/* Package Contents List Input */}
-                <div>
-                    <PackageContentList
-                        initialItems={packageContents}
-                        onChange={setPackageContents}
-                    />
-                </div>
-
+                {/* Submit Button */}
                 <div className="flex justify-end pt-4">
                     <Button disableLoader type="submit">
                         {mode === "edit" ? "Update Package Tier" : "Create Package Tier"}

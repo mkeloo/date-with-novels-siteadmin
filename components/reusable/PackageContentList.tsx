@@ -63,7 +63,7 @@ export default function PackageContentList({ initialItems, onChange }: PackageCo
     return (
         <div className="w-full h-full flex flex-col lg:flex-row gap-4 justify-center">
             {/* List Input & Sortable */}
-            <Card className="w-full p-4 shadow-lg">
+            <Card className="w-full p-4 shadow-lg gap-3">
                 <h2 className="text-lg font-bold">Package Contents</h2>
                 <div className="flex gap-2">
                     <Input
