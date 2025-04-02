@@ -31,11 +31,11 @@ export default function PackageTierFormPage() {
                 </TabsList>
             </Card>
 
-            <TabsContent value="info">
+            <TabsContent value="info" className="tab-transition">
                 <PackageTierFormClient mode={mode} packageId={id} />
             </TabsContent>
 
-            <TabsContent value="description">
+            <TabsContent value="description" className="tab-transition">
                 <PackageDescriptionContentForm mode={mode} packageId={id} />
             </TabsContent>
         </Tabs>
