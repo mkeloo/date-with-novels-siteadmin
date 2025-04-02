@@ -15,16 +15,16 @@ export default function PackageTierFormPage() {
     return (
         <Tabs defaultValue="info" className="w-full">
             <Card className="w-full flex flex-col items-center justify-center gap-4 p-4 mb-2">
-                <TabsList className="my-4 rounded-xl bg-muted p-1 mx-auto grid grid-cols-2 gap-2">
+                <TabsList className="my-4 rounded-xl bg-muted p-1 mx-auto grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-2">
                     <TabsTrigger
                         value="info"
-                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2 active:scale-90 transition-transform duration-200"
+                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-base md:text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2 active:scale-90 transition-transform duration-200"
                     >
                         Package Information
                     </TabsTrigger>
                     <TabsTrigger
                         value="description"
-                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2 active:scale-90 transition-transform duration-200"
+                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-base md:text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2 active:scale-90 transition-transform duration-200"
                     >
                         Package Content
                     </TabsTrigger>

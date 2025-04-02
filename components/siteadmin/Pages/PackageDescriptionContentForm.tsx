@@ -90,8 +90,8 @@ export default function PackageDescriptionContentForm({
                             Add package information including its purpose, included items, and any disclaimers.
                         </p>
                     </Card>
-                    <Card className="p-4">
-                        <h2 className="text-lg font-bold">Long Description</h2>
+                    <Card className="p-4 gap-3">
+                        <h3 className="text-lg font-bold">Long Description</h3>
                         <Textarea
                             id="longDesc"
                             rows={10}
@@ -107,8 +107,8 @@ export default function PackageDescriptionContentForm({
                         onChange={setPackageContents}
                     />
 
-                    <Card className="p-4">
-                        <h2 className="text-lg font-bold">Disclaimer</h2>
+                    <Card className="p-4 gap-3">
+                        <h3 className="text-lg font-bold">Disclaimer</h3>
                         <Textarea
                             id="disclaimer"
                             rows={10}
@@ -131,7 +131,7 @@ export default function PackageDescriptionContentForm({
                     className="flex h-full min-h-full"
                     style={{ flex: `0 0 calc(${100 - editorWidth}% - ${DIVIDER_WIDTH_PX / 2}px)` }}
                 >
-                    <Card className="p-4 space-y-4 text-sm h-full min-h-full">
+                    <Card className="p-4 gap-4 text-sm h-full min-h-full">
                         <Card className="p-4 gap-2 flex flex-col">
                             <h2 className="text-2xl font-semibold">Live Preview</h2>
                             <p className="text-muted-foreground text-sm">
@@ -139,28 +139,28 @@ export default function PackageDescriptionContentForm({
                             </p>
                         </Card>
 
-                        <div>
-                            <h4 className="font-semibold mb-1">Description</h4>
+                        <Card className="p-4 gap-3">
+                            <h3 className="text-lg font-bold">Description</h3>
                             <p className="whitespace-pre-line text-muted-foreground">
                                 {longDesc || "No description provided yet."}
                             </p>
-                        </div>
+                        </Card>
 
-                        <div>
-                            <h4 className="font-semibold mb-1">Contents</h4>
+                        <Card className="p-4 gap-3">
+                            <h3 className="text-lg font-bold">Contents</h3>
                             <ul className="list-disc pl-5 text-muted-foreground whitespace-pre-line">
                                 {packageContents.length > 0
                                     ? packageContents.map((item, idx) => <li key={idx}>{item}</li>)
                                     : <li>No contents listed.</li>}
                             </ul>
-                        </div>
+                        </Card>
 
-                        <div>
-                            <h4 className="font-semibold mb-1">Disclaimer</h4>
+                        <Card className="p-4 gap-3">
+                            <h3 className="text-lg font-bold">Disclaimer</h3>
                             <p className="whitespace-pre-line text-muted-foreground">
                                 {disclaimer}
                             </p>
-                        </div>
+                        </Card>
                     </Card>
                 </div>
             </div>
