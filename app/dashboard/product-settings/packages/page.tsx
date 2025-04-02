@@ -74,7 +74,7 @@ export default function PackagesOverviewPage() {
                         <p className="text-sm text-muted-foreground">{tier.short_description}</p>
 
                         <div className="text-sm text-muted-foreground space-y-1">
-                            <p><strong>Tier:</strong> {tier.tier_type.replace("_", " ")}</p>
+                            {/* <p><strong>Tier:</strong> {tier.tier_type.replace("_", " ")}</p> */}
                             <p><strong>Price:</strong> ${tier.price.toFixed(2)}</p>
                             <p><strong>Updated:</strong> {format(new Date(tier.updated_at), "PPpp")}</p>
                         </div>
