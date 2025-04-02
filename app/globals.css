@@ -333,3 +333,8 @@
 .tab-transition {
   animation: fade-slide 300ms ease-out;
 } */
+
+
+.disable-selection {
+  user-select: none !important;
+}
