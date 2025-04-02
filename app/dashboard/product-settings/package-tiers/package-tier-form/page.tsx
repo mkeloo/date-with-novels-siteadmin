@@ -18,13 +18,13 @@ export default function PackageTierFormPage() {
                 <TabsList className="my-4 rounded-xl bg-muted p-1 mx-auto grid grid-cols-2 gap-2">
                     <TabsTrigger
                         value="info"
-                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2"
+                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2 active:scale-90 transition-transform duration-200"
                     >
                         Package Information
                     </TabsTrigger>
                     <TabsTrigger
                         value="description"
-                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2"
+                        className="data-[state=active]:bg-primary data-[state=active]:text-white text-lg font-bold tracking-wide rounded-xl px-10 py-3 w-full border-2 active:scale-90 transition-transform duration-200"
                     >
                         Package Content
                     </TabsTrigger>

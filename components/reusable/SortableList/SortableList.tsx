@@ -70,7 +70,7 @@ function SortableItem({
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className="flex items-center gap-2 bg-gray-100 dark:bg-neutral-800 p-3 rounded-md shadow-lg transition-all"
+            className="flex items-center gap-2 bg-secondary px-3 py-2 rounded-md shadow-lg transition-all"
         >
             {/* Drag handle */}
             <span
@@ -106,16 +106,23 @@ function SortableItem({
                         size="icon"
                         variant="ghost"
                         onClick={() => onSaveEdit(index, editValue)}
+                        className="bg-green-100 dark:bg-green-900/70 hover:!bg-green-300 hover:dark:!bg-green-700 active:scale-90 transition-transform duration-200"
                     >
-                        <Check className="w-4 h-4 text-green-500" />
+                        <Check className="w-4 h-4 text-green-700 dark:text-green-400 " />
                     </Button>
                 ) : (
-                    <Button disableLoader size="icon" variant="ghost" onClick={() => onStartEdit(index)}>
+                    <Button disableLoader size="icon" variant="ghost" className="bg-yellow-200 dark:bg-yellow-900/70 hover:!bg-yellow-400 hover:dark:!bg-yellow-500 active:scale-90 transition-transform duration-200" onClick={() => onStartEdit(index)}>
                         <Pencil className="w-4 h-4" />
                     </Button>
                 )}
-                <Button disableLoader size="icon" variant="ghost" onClick={() => onDelete(index)}>
-                    <X className="w-4 h-4 text-red-500" />
+                <Button
+                    disableLoader
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => onDelete(index)}
+                    className="bg-red-100 dark:bg-red-900/70 hover:!bg-red-300 hover:dark:!bg-red-700 active:scale-90 transition-transform duration-200"
+                >
+                    <X className="w-4 h-4 text-red-700 dark:text-red-200 " />
                 </Button>
             </div>
         </li>
@@ -149,7 +156,7 @@ export function SortableList({
             }}
         >
             <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                <ul style={{ minHeight: "100px" }} className="mt-4 space-y-2">
+                <ul style={{ minHeight: "100px" }} className="mt-2 space-y-2">
                     {items.map((item, index) => (
                         <SortableItem
                             key={index}
@@ -171,7 +178,7 @@ export function SortableList({
             {/* Drag Overlay - For better animation */}
             <DragOverlay>
                 {activeItem ? (
-                    <div className="bg-gray-100 dark:bg-neutral-800 p-3 rounded-md shadow-xl scale-110 opacity-90 transition-transform flex items-center gap-2">
+                    <div className="bg-gray-100 dark:bg-neutral-800 px-3 py-1 rounded-md shadow-xl scale-110 opacity-90 transition-transform flex items-center gap-2">
                         {/* Drag Handle */}
                         <span className="cursor-grab p-2 text-gray-500 hover:text-gray-800 dark:hover:text-white">
                             <GripVertical className="w-5 h-5" />
@@ -183,14 +190,14 @@ export function SortableList({
                         </span>
 
                         {/* Edit & Delete Buttons (Optional, disabled in overlay for better UX) */}
-                        <div className="flex gap-2">
+                        {/* <div className="flex gap-2">
                             <Button disableLoader size="icon" variant="ghost" disabled>
                                 <Pencil className="w-4 h-4" />
                             </Button>
                             <Button disableLoader size="icon" variant="ghost" disabled>
                                 <X className="w-4 h-4 text-red-500" />
                             </Button>
-                        </div>
+                        </div> */}
                     </div>
                 ) : null}
             </DragOverlay>
