@@ -191,15 +191,6 @@ export const data = {
             ],
         },
         {
-            title: "Manage Package Pages",
-            url: "#",
-            items: [
-                { title: "First Chapter Edition", url: "/dashboard/manage-pages/first-chapter-edition", icon: FileText },
-                { title: "Classic Edition", url: "/dashboard/manage-pages/classic-edition", icon: FileText },
-                { title: "Themed Edition", url: "/dashboard/manage-pages/themed-edition", icon: FileText },
-            ],
-        },
-        {
             title: "Promotions & Testimonials",
             url: "#",
             items: [
