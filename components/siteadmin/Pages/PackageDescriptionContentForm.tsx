@@ -4,16 +4,11 @@ import { useState, useRef, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import PackageContentList from "@/components/reusable/PackageContentList"
+import { DEFAULT_DISCLAIMER } from "@/lib/sidebarData"
 import { getPackagesById, Packages } from "../../../app/actions/siteadmin/packages"
+import { createPackageDescription, getPackageDescriptionByPackageId, updatePackageDescription, PackageDescription } from "@/app/actions/siteadmin/package_descriptions"
+import { Button } from "@/components/ui/button"
 
-
-const DEFAULT_DISCLAIMER = `These are new books, Never Used. It can be Hardcover, Paperback or Mass Market Paperback.
-
-Unfortunately, we are unable to guarantee specific books, only books by category/genre and all the books are over 3.5 on Goodread. Descriptions of books will also not be sent out. It's a surprise!
-
-Due to the nature of this product, no returns or refunds if it's a book you already have. Decorations will vary on each book.
-
-We kindly remind you that once we drop off your package in USPS facility, we will have no control over the package anymore. Therefore we will not be responsible for items delayed by USPS and will not issue refunds for items not received by a certain date. If you experience any issue with your package, please contact your local USPS facility.`
 
 export default function PackageDescriptionContentForm({
     mode,
@@ -29,15 +24,18 @@ export default function PackageDescriptionContentForm({
     const [editorWidth, setEditorWidth] = useState(60) // in %
     const isDragging = useRef(false)
 
+
     useEffect(() => {
         async function fetchPackageDetails(id: number) {
             try {
-                const data: Packages = await getPackagesById(id)
-                // setLongDesc(data.long_description || "") // Update if long_description exists in DB
-                // setDisclaimer(data.disclaimer || DEFAULT_DISCLAIMER)
-                setPackageContents(data.package_contents || [])
+                let data: PackageDescription = await getPackageDescriptionByPackageId(id)
+                const plainData = JSON.parse(JSON.stringify(data))
+
+                setLongDesc(plainData.long_description || "")
+                setDisclaimer(plainData.reader_notice || DEFAULT_DISCLAIMER)
+                setPackageContents(plainData.package_contents || [])
             } catch (error) {
-                console.error("Failed to fetch package tier details:", error)
+                console.error("Failed to fetch package description:", error)
             }
         }
 
@@ -163,6 +161,34 @@ export default function PackageDescriptionContentForm({
                         </Card>
                     </Card>
                 </div>
+            </div>
+
+            <div className="flex justify-end mt-4">
+                <Button
+                    onClick={async () => {
+                        if (!packageId) return
+                        try {
+                            if (mode === "edit") {
+                                await updatePackageDescription(Number(packageId), {
+                                    long_description: longDesc,
+                                    reader_notice: disclaimer,
+                                    package_contents: packageContents,
+                                })
+                            } else {
+                                await createPackageDescription({
+                                    package_id: Number(packageId),
+                                    long_description: longDesc,
+                                    reader_notice: disclaimer,
+                                    package_contents: packageContents,
+                                })
+                            }
+                        } catch (error) {
+                            console.error("Error saving package description:", error)
+                        }
+                    }}
+                >
+                    {mode === "edit" ? "Update Package Description" : "Create Package Description"}
+                </Button>
             </div>
         </div>
     )

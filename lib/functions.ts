@@ -110,3 +110,4 @@ export function generateRandomEmojiScatter(
 
     return scatter
 }
+

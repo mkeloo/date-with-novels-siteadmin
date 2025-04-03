@@ -148,13 +148,13 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
                 });
 
                 setThemes(filteredThemes);
-                console.log("Filtered themes based on package tier ID:", filteredThemes);
+                // console.log("Filtered themes based on package tier ID:", filteredThemes);
             } catch (error) {
                 console.error("Failed to fetch filtered themes:", error);
             }
         }
 
-        console.log("Fetching filtered themes for package tier ID:", packageTierId);
+        // console.log("Fetching filtered themes for package tier ID:", packageTierId);
         fetchFilteredThemes();
     }, [packageTierId]);
 
