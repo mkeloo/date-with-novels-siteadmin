@@ -45,13 +45,13 @@ export async function getPackageTierById(id: number): Promise<PackageTier> {
 
 // 🔹 Create new package tier
 export async function createPackageTier(
-    payload: Omit<PackageTier, "id" | "created_at" | "updated_at">
+    payload: Omit<PackageTier, "id" | "created_at" | "updated_at">[]
 ): Promise<PackageTier> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
         .from("package_tiers")
-        .insert(payload)
+        .insert(payload)  // Now payload is an array.
         .select("*")
         .single()
 
