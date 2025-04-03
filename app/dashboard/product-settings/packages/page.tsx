@@ -15,25 +15,10 @@ import PackageMoreInfoDialog from "@/components/reusable/Dialogs/PackageMoreInfo
 
 export default function PackagesOverviewPage() {
     const [packages, setPackages] = useState<Packages[]>([])
-    const [loading, setLoading] = useState(true)
     const [showDelete, setShowDelete] = useState(false)
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
     const [packageTierName, setPackageTierName] = useState<Record<number, string>>({})
 
-    // Fetch packages on mount
-    // useEffect(() => {
-    //     const fetchAllPackages = async () => {
-    //         try {
-    //             const res = await getPackages()
-    //             setPackages(res)
-    //         } catch (err) {
-    //             console.error("Failed to fetch packages:", err)
-    //         } finally {
-    //             setLoading(false)
-    //         }
-    //     }
-    //     fetchAllPackages()
-    // }, [])
 
     useEffect(() => {
         const fetchAllPackages = async () => {
@@ -41,24 +26,22 @@ export default function PackagesOverviewPage() {
                 const res = await getPackages()
                 setPackages(res)
 
-                const tierIdSet = new Set(res.map((pkg) => pkg.package_tier))
-                const tierNameMap: Record<number, string> = {}
-
-                for (const id of tierIdSet) {
+                const tierIdSet = Array.from(new Set(res.map((pkg) => pkg.package_tier)))
+                const tierPromises = tierIdSet.map(async (id) => {
                     try {
                         const tier = await getPackageTierById(id)
-                        tierNameMap[id] = tier.name
+                        return [id, tier.name] as [number, string]
                     } catch (err) {
                         console.error(`Failed to get package tier name for ID ${id}`, err)
-                        tierNameMap[id] = "Unknown Tier"
+                        return [id, "Unknown Tier"] as [number, string]
                     }
-                }
+                })
 
+                const tierEntries = await Promise.all(tierPromises)
+                const tierNameMap = Object.fromEntries(tierEntries)
                 setPackageTierName(tierNameMap)
             } catch (err) {
                 console.error("Failed to fetch packages:", err)
-            } finally {
-                setLoading(false)
             }
         }
 
@@ -74,8 +57,6 @@ export default function PackagesOverviewPage() {
             console.error("Failed to delete package:", err)
         }
     }
-
-    if (loading) return <p>Loading packages...</p>
 
     return (
         <div className="space-y-6">

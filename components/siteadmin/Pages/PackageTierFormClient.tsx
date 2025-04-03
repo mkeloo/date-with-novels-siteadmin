@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +16,7 @@ import { getPackagesById, Packages } from "@/app/actions/siteadmin/packages"
 import { getPackageTiers, getSupportFlagsByPackageTierId } from "@/app/actions/siteadmin/package_tier"
 import { getThemes } from "@/app/actions/siteadmin/themes"
 import { z } from "zod"
+import LoadingPageSkeleton from "@/components/reusable/LoadingPageSkeleton"
 
 const GENRES = [
     "Romance",
@@ -29,7 +30,6 @@ const GENRES = [
 
 const packageSchema = z.object({
     is_enabled: z.boolean(),
-    // Require a valid theme id (a number greater than 0)
     theme_id: z.number({ required_error: "Theme is required" }).min(1, "Theme is required"),
     name: z.string().min(1, "Title is required"),
     slug: z.string().min(1, "Slug is required"),
@@ -72,6 +72,9 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
     const [genres, setGenres] = useState<string[]>([])
     const [iconName, setIconName] = useState("Book")
 
+    // Track whether the user has modified the title manually.
+    const [isTitleModified, setIsTitleModified] = useState(false)
+
     // For holding field-specific error messages
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
@@ -81,19 +84,39 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
 
     const router = useRouter()
 
-    // Update slug based on title and theme (read from local state)
+    // Generate slug solely based on the title.
     useEffect(() => {
-        if (!theme) {
-            setSlug(slugify(title))
-            return
+        const normalizedTitle = title
+            .trim()
+            .replace(/\s*-\s*/g, '-') // Normalize hyphen spacing.
+            .replace(/\s+/g, '-')     // Replace remaining spaces with hyphens.
+            .toLowerCase()
+        setSlug(normalizedTitle)
+    }, [title])
+
+    // Compute a suggested title from PackageTierName and Theme.
+    // If a theme is selected and it's not "regular", suggested title is "TierName - ThemeName"
+    // Otherwise, it is just the tier name.
+    const suggestedTitle = useMemo(() => {
+        if (!packageTierId) return ""
+        const tier = packageTiers.find((t) => t.id === packageTierId)
+        if (!tier) return ""
+        const tierName = tier.name
+        if (theme) {
+            const selectedTheme = themes.find((t) => t.id.toString() === theme)
+            if (selectedTheme && selectedTheme.theme_name.toLowerCase() !== "regular") {
+                return `${tierName} - ${selectedTheme.theme_name}`
+            }
         }
-        const selectedTheme = themes.find((t) => t.id.toString() === theme)
-        const themeLabel = selectedTheme?.theme_name
-        const newSlug =
-            title +
-            (themeLabel && themeLabel.toLowerCase() !== "regular" ? ` ${themeLabel}` : "")
-        setSlug(slugify(newSlug))
-    }, [title, theme, themes])
+        return tierName
+    }, [packageTierId, packageTiers, theme, themes])
+
+    // Update title from suggestedTitle if in create mode and the user hasn't modified the title yet.
+    useEffect(() => {
+        if (mode === "create" && !isTitleModified && suggestedTitle) {
+            setTitle(suggestedTitle)
+        }
+    }, [suggestedTitle, mode, isTitleModified])
 
     useEffect(() => {
         async function fetchTiers() {
@@ -218,7 +241,7 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
     }
 
     if (loading) {
-        return <div className="p-4">Loading package details...</div>
+        return <LoadingPageSkeleton />
     }
 
     return (
@@ -332,7 +355,19 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                     <Card className="p-4">
                         <div className="w-full flex flex-col">
                             <Label>Title *</Label>
-                            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                            <Input
+                                value={title}
+                                onChange={(e) => {
+                                    setTitle(e.target.value)
+                                    setIsTitleModified(true)
+                                }}
+                            />
+                            {/* Display the computed suggested title below the title input */}
+                            {suggestedTitle && (
+                                <p className="text-muted-foreground text-sm mt-2">
+                                    Copy Suggested Title: <span className="font-bold">{suggestedTitle}</span>
+                                </p>
+                            )}
                             {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
                         </div>
                         <div className="w-full flex flex-col">
@@ -424,7 +459,7 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                 </p>
                             </div>
                             <div className="flex justify-end">
-                                <Button onClick={() => router.push("/dashboard/product-settings/package-tiers")}>
+                                <Button onClick={() => router.push("/dashboard/product-settings/packages")}>
                                     Go Back to Overview
                                 </Button>
                             </div>
