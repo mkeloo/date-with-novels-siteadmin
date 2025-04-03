@@ -74,13 +74,16 @@ export async function getPackageDescriptionByPackageId(package_id: number) {
 
 
 // Update
-export async function updatePackageDescription(id: number, updates: Partial<PackageDescription>) {
-    const supabase = await createClient()
+export async function updatePackageDescriptionByPackageId(
+    package_id: number,
+    updates: Partial<PackageDescription>
+) {
+    const supabase = await createClient();
 
     const { data, error } = await supabase
         .from("package_descriptions")
         .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq("id", id)
+        .eq("package_id", package_id)
         .select()
         .single();
 

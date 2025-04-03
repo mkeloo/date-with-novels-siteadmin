@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import PackageContentList from "@/components/reusable/PackageContentList"
 import { DEFAULT_DISCLAIMER } from "@/lib/sidebarData"
 import { getPackagesById, Packages } from "../../../app/actions/siteadmin/packages"
-import { createPackageDescription, getPackageDescriptionByPackageId, updatePackageDescription, PackageDescription } from "@/app/actions/siteadmin/package_descriptions"
+import { createPackageDescription, getPackageDescriptionByPackageId, updatePackageDescriptionByPackageId, PackageDescription } from "@/app/actions/siteadmin/package_descriptions"
 import { Button } from "@/components/ui/button"
 
 
@@ -169,7 +169,7 @@ export default function PackageDescriptionContentForm({
                         if (!packageId) return
                         try {
                             if (mode === "edit") {
-                                await updatePackageDescription(Number(packageId), {
+                                await updatePackageDescriptionByPackageId(Number(packageId), {
                                     long_description: longDesc,
                                     reader_notice: disclaimer,
                                     package_contents: packageContents,
