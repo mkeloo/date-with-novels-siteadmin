@@ -65,28 +65,18 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
 
 
     useEffect(() => {
-        async function updateSlug() {
-            try {
-                if (!theme) {
-                    setSlug(slugify(title));
-                    return;
-                }
-
-                const allThemes = await getThemes();
-                const selectedTheme = allThemes.find((t) => t.id.toString() === theme);
-                const themeLabel = selectedTheme?.theme_name;
-
-                const newSlug =
-                    title + (themeLabel && themeLabel.toLowerCase() !== "regular" ? ` ${themeLabel}` : "");
-
-                setSlug(slugify(newSlug));
-            } catch (error) {
-                console.error("Failed to generate slug:", error);
-            }
+        if (!theme) {
+            setSlug(slugify(title));
+            return;
         }
 
-        updateSlug();
-    }, [title, theme]);
+        const selectedTheme = themes.find((t) => t.id.toString() === theme);
+        const themeLabel = selectedTheme?.theme_name;
+        const newSlug =
+            title +
+            (themeLabel && themeLabel.toLowerCase() !== "regular" ? ` ${themeLabel}` : "");
+        setSlug(slugify(newSlug));
+    }, [title, theme, themes]);
 
 
     useEffect(() => {
