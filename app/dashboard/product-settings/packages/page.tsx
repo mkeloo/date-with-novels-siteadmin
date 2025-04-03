@@ -68,9 +68,10 @@ export default function PackagesOverviewPage() {
     const handleDelete = async (id: number) => {
         try {
             await deletePackages(id)
+            setPackages((prev) => prev.filter((pkg) => pkg.id !== id)) // ✅ remove from local state
             setConfirmDeleteId(null)
         } catch (err) {
-            console.error("Failed to delete package package:", err)
+            console.error("Failed to delete package:", err)
         }
     }
 
