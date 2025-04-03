@@ -89,3 +89,26 @@ export async function deletePackageTier(id: number) {
     if (error) throw error
     revalidatePath("/siteadmin/package-tiers")
 }
+
+
+
+//  Get support flags (supports_themed & supports_regular) for a package tier
+export async function getSupportFlagsByPackageTierId(packageTierId: number): Promise<{
+    supports_themed: boolean
+    supports_regular: boolean
+}> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("package_tiers")
+        .select("supports_themed, supports_regular")
+        .eq("id", packageTierId)
+        .single()
+
+    if (error) throw error
+
+    return {
+        supports_themed: data.supports_themed,
+        supports_regular: data.supports_regular,
+    }
+}

@@ -12,22 +12,10 @@ import { cn, slugify } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import LucideIcon from "@/components/reusable/LucideIcon"
-import { getPackagesById, Packages } from "../../../app/actions/siteadmin/packages"
-import { getPackageTiers } from "../../../app/actions/siteadmin/package_tier"
+import { getPackagesById, Packages } from "@/app/actions/siteadmin/packages"
+import { getPackageTiers, getSupportFlagsByPackageTierId } from "@/app/actions/siteadmin/package_tier"
+import { getThemes, getSupportFlagsByThemes } from "@/app/actions/siteadmin/themes"
 
-// Dummy data
-const PACKAGE_TIERS = [
-    { label: "First Chapter Edition", value: "first_chapter" },
-    { label: "Classic Edition", value: "classic" },
-    { label: "Themed Edition", value: "themed" },
-]
-
-const THEMES = [
-    { label: "Regular", value: "1" },
-    { label: "Valentine's", value: "2" },
-    { label: "Nurse", value: "3" },
-    { label: "Horror", value: "4" },
-]
 
 const GENRES = [
     "Romance", "Mystery", "Thriller", "Young Adult Fiction", "Fantasy", "Horror", "Surprise Me"
@@ -52,7 +40,13 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
     const [isEnabled, setIsEnabled] = useState(false)
     const [packageTierId, setPackageTierId] = useState<number | null>(null);
     const [packageTiers, setPackageTiers] = useState<{ id: number; name: string }[]>([]);
-    const [theme, setTheme] = useState("")
+    const [theme, setTheme] = useState<string>("");
+    const [themes, setThemes] = useState<{
+        id: number;
+        theme_name: string;
+        supports_themed: boolean;
+        supports_regular: boolean;
+    }[]>([]);
     const [title, setTitle] = useState("")
     const [slug, setSlug] = useState("")
     const [shortDescription, setShortDescription] = useState("")
@@ -69,9 +63,29 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
     const router = useRouter()
 
 
+
     useEffect(() => {
-        const themeLabel = theme && THEMES.find(t => t.value === theme)?.label;
-        setSlug(slugify(title + (themeLabel && themeLabel !== "Regular" ? ` ${themeLabel}` : "")));
+        async function updateSlug() {
+            try {
+                if (!theme) {
+                    setSlug(slugify(title));
+                    return;
+                }
+
+                const allThemes = await getThemes();
+                const selectedTheme = allThemes.find((t) => t.id.toString() === theme);
+                const themeLabel = selectedTheme?.theme_name;
+
+                const newSlug =
+                    title + (themeLabel && themeLabel.toLowerCase() !== "regular" ? ` ${themeLabel}` : "");
+
+                setSlug(slugify(newSlug));
+            } catch (error) {
+                console.error("Failed to generate slug:", error);
+            }
+        }
+
+        updateSlug();
     }, [title, theme]);
 
 
@@ -90,34 +104,59 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
 
 
     useEffect(() => {
-        async function fetchPackages(id: number) {
-            try {
-                const data: Packages = await getPackagesById(id)
-                setIsEnabled(data.is_enabled)
-                setPackageTierId(data.package_tier)
-                setTheme(data.theme_id?.toString() || "")
-                setTitle(data.name)
-                setShortDescription(data.short_description)
-                setPrice(data.price.toString())
-                setGenres(data.allowed_genres)
-                setIconName(data.icon_name)
-                setPackageContents(data.package_contents || [])
+        async function fetchFilteredThemes() {
+            if (!packageTierId) return;
 
-                // Save original data for later comparison
-                setOriginalData(data)
+            try {
+                const supportFlags = await getSupportFlagsByPackageTierId(packageTierId);
+                const allThemesRaw = await getThemes();
+
+                // Filter based on new supports_themed/supports_regular flags on the theme itself
+                const filteredThemes = allThemesRaw.filter((theme) => {
+                    if (theme.supports_themed && supportFlags.supports_themed) return true;
+                    if (theme.supports_regular && supportFlags.supports_regular) return true;
+                    return false;
+                });
+
+                setThemes(filteredThemes);
+                console.log("Filtered themes based on package tier ID:", filteredThemes);
             } catch (error) {
-                console.error("Failed to fetch package tier:", error)
-            } finally {
-                setLoading(false)
+                console.error("Failed to fetch filtered themes:", error);
             }
         }
 
-        if (mode === "edit" && packageId) {
-            fetchPackages(Number(packageId))
-        } else {
-            setLoading(false)
+        console.log("Fetching filtered themes for package tier ID:", packageTierId);
+        fetchFilteredThemes();
+    }, [packageTierId]);
+
+
+    useEffect(() => {
+        async function fetchFilteredThemes() {
+            if (!packageTierId) return;
+
+            try {
+                const supportFlags = await getSupportFlagsByPackageTierId(packageTierId);
+                const allThemesRaw = await getThemes();
+
+                // Filter based on new supports_themed/supports_regular flags on the theme itself
+                const filteredThemes = allThemesRaw.filter((theme) => {
+                    if (theme.supports_themed && supportFlags.supports_themed) return true;
+                    if (theme.supports_regular && supportFlags.supports_regular) return true;
+                    return false;
+                });
+
+                setThemes(filteredThemes);
+                console.log("Filtered themes based on package tier ID:", filteredThemes);
+            } catch (error) {
+                console.error("Failed to fetch filtered themes:", error);
+            }
         }
-    }, [mode, packageId])
+
+        console.log("Fetching filtered themes for package tier ID:", packageTierId);
+        fetchFilteredThemes();
+    }, [packageTierId]);
+
+
 
     const toggleGenre = (genre: string) => {
         setGenres((prev) =>
@@ -197,36 +236,41 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
                             </div>
                         </div>
 
-                        <Label>Package Tier</Label>
-                        <Select
-                            value={packageTierId?.toString() || ""}
-                            onValueChange={(val) => setPackageTierId(parseInt(val))}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Tier" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {packageTiers.map((tier) => (
-                                    <SelectItem key={tier.id} value={tier.id.toString()}>
-                                        {tier.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="w-full flex flex-col">
+                            <Label>Package Tier</Label>
+                            <Select
+                                value={packageTierId?.toString() || ""}
+                                onValueChange={(val) => setPackageTierId(parseInt(val))}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Tier" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {packageTiers.map((tier) => (
+                                        <SelectItem key={tier.id} value={tier.id.toString()}>
+                                            {tier.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                        <Label>Theme Type</Label>
-                        <Select value={theme} onValueChange={setTheme}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Theme" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {THEMES.map((t) => (
-                                    <SelectItem key={t.value} value={t.value}>
-                                        {t.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+
+                        <div className="w-full flex flex-col">
+                            <Label>Theme Type</Label>
+                            <Select value={theme} onValueChange={setTheme}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Theme" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {themes.map((themeObj: { id: number; theme_name: string; supports_themed: boolean; supports_regular: boolean }) => (
+                                        <SelectItem key={themeObj.id} value={themeObj.id.toString()}>
+                                            {themeObj.theme_name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </Card>
 
                     <Card className="w-full lg:w-1/2 p-4">
@@ -280,23 +324,32 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card className="p-4">
-                        <Label>Title</Label>
-                        <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                        <div className="w-full flex flex-col">
+                            <Label>Title</Label>
+                            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                        </div>
 
-                        <Label>Slug</Label>
-                        <Input value={slug} readOnly />
+                        <div className="w-full flex flex-col">
+                            <Label>Slug</Label>
+                            <Input value={slug} readOnly />
+                        </div>
+
                     </Card>
 
                     <Card className="p-4">
-                        <Label>Price ($)</Label>
-                        <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+                        <div className="w-full flex flex-col">
+                            <Label>Price ($)</Label>
+                            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+                        </div>
 
-                        <Label>Description</Label>
-                        <Input
-                            value={shortDescription}
-                            maxLength={160}
-                            onChange={(e) => setShortDescription(e.target.value)}
-                        />
+                        <div className="w-full flex flex-col">
+                            <Label>Description</Label>
+                            <Input
+                                value={shortDescription}
+                                maxLength={160}
+                                onChange={(e) => setShortDescription(e.target.value)}
+                            />
+                        </div>
                     </Card>
                 </div>
 

@@ -7,6 +7,8 @@ export interface Theme {
     theme_name: string
     emoji_list: string[] | null
     background_color: string | null
+    supports_themed: boolean
+    supports_regular: boolean
 }
 
 // Get all themes
@@ -66,4 +68,27 @@ export async function deleteTheme(id: number): Promise<boolean> {
     const { error } = await supabase.from("themes").delete().eq("id", id)
     if (error) throw error
     return true
+}
+
+
+
+//  Get support flags (supports_themed & supports_regular) for a package tier
+export async function getSupportFlagsByThemes(themeId: number): Promise<{
+    supports_themed: boolean
+    supports_regular: boolean
+}> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("themes")
+        .select("supports_themed, supports_regular")
+        .eq("id", themeId)
+        .single()
+
+    if (error) throw error
+
+    return {
+        supports_themed: data.supports_themed,
+        supports_regular: data.supports_regular,
+    }
 }
