@@ -8,6 +8,7 @@ import { DEFAULT_DISCLAIMER } from "@/lib/sidebarData"
 import { getPackagesById, Packages } from "../../../app/actions/siteadmin/packages"
 import { createPackageDescription, getPackageDescriptionByPackageId, updatePackageDescriptionByPackageId, PackageDescription } from "@/app/actions/siteadmin/package_descriptions"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 
 export default function PackageDescriptionContentForm({
@@ -17,6 +18,8 @@ export default function PackageDescriptionContentForm({
     mode: "create" | "edit"
     packageId: string | null
 }) {
+    const router = useRouter()
+
     const [longDesc, setLongDesc] = useState("")
     const [disclaimer, setDisclaimer] = useState(DEFAULT_DISCLAIMER)
     const [packageContents, setPackageContents] = useState<string[]>([])
@@ -182,6 +185,8 @@ export default function PackageDescriptionContentForm({
                                     package_contents: packageContents,
                                 })
                             }
+
+                            router.push("/dashboard/product-settings/packages")
                         } catch (error) {
                             console.error("Error saving package description:", error)
                         }
