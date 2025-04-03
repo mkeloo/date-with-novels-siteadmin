@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
 import { getPackages, deletePackages, Packages } from "@/app/actions/siteadmin/packages"
 import { getPackageTierById } from "@/app/actions/siteadmin/package_tier"
@@ -101,6 +101,9 @@ export default function PackagesOverviewPage() {
 
                                 <VisuallyHidden.Root>
                                     <DialogTitle>More Information</DialogTitle>
+                                    <DialogDescription>
+                                        More Information about {packageItem.name}
+                                    </DialogDescription>
                                 </VisuallyHidden.Root>
                                 <DialogContent className="max-w-lg space-y-4">
                                     <div className="flex items-center justify-between">
@@ -131,7 +134,7 @@ export default function PackagesOverviewPage() {
                         <Dialog open={confirmDeleteId === packageItem.id} onOpenChange={() => setConfirmDeleteId(null)}>
                             <DialogContent className="max-w-md">
                                 <DialogTitle className="text-lg font-semibold">Confirm Deletion</DialogTitle>
-                                <p>Are you sure you want to delete <strong>{packageItem.name}</strong>? This action cannot be undone.</p>
+                                <DialogDescription className="text-white text-base">Are you sure you want to delete <strong>{packageItem.name}</strong>? This action cannot be undone.</DialogDescription>
                                 <div className="flex justify-end gap-2">
                                     <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
                                     <Button variant="destructive" onClick={() => handleDelete(packageItem.id)}>Confirm Delete</Button>

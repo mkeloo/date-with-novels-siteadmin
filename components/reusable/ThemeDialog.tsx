@@ -7,6 +7,7 @@ import {
     DialogTitle,
     DialogTrigger,
     DialogClose,
+    DialogDescription,
 } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
@@ -25,6 +26,9 @@ export default function ThemeDialog({ trigger, title, children, open, onOpenChan
             <DialogContent className="space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar">
                 <VisuallyHidden>
                     <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>
+                        {title}
+                    </DialogDescription>
                 </VisuallyHidden>
                 {children}
             </DialogContent>

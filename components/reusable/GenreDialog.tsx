@@ -4,6 +4,7 @@ import React from "react"
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
@@ -24,6 +25,9 @@ export default function GenreDialog({ trigger, title, children, open, onOpenChan
             <DialogContent className="space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar">
                 <VisuallyHidden>
                     <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>
+                        {title}
+                    </DialogDescription>
                 </VisuallyHidden>
                 {children}
             </DialogContent>

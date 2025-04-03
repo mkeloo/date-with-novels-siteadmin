@@ -227,6 +227,7 @@ export default function PackageTiersPage() {
 
                             {/* Edit Button */}
                             <Button
+                                disableLoader
                                 size="sm"
                                 variant="secondary"
                                 onClick={() => handleEdit(tier.id)}
@@ -253,6 +254,9 @@ export default function PackageTiersPage() {
 
                                 <VisuallyHidden.Root>
                                     <DialogTitle>Confirm Deletion</DialogTitle>
+                                    <DialogDescription>
+                                        Are you sure you want to delete {tier.name}? This action cannot be undone.
+                                    </DialogDescription>
                                 </VisuallyHidden.Root>
 
                                 <DialogContent className="max-w-md space-y-4">
@@ -367,7 +371,7 @@ export default function PackageTiersPage() {
                             <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">{currentTier ? "Update Tier" : "Create Tier"}</Button>
+                            <Button disableLoader type="submit">{currentTier ? "Update Tier" : "Create Tier"}</Button>
                         </div>
                     </form>
                 </DialogContent>

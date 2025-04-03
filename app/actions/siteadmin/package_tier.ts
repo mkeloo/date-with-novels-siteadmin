@@ -51,12 +51,11 @@ export async function createPackageTier(
 
     const { data, error } = await supabase
         .from("package_tiers")
-        .insert(payload)  // Now payload is an array.
+        .insert(payload) // payload is an array
         .select("*")
         .single()
 
     if (error) throw error
-    revalidatePath("/siteadmin/package-tiers")
 
     return data as PackageTier
 }
@@ -74,7 +73,7 @@ export async function updatePackageTier(
         .eq("id", id)
 
     if (error) throw error
-    revalidatePath("/siteadmin/package-tiers")
+
 }
 
 // 🔹 Delete package tier
@@ -87,7 +86,6 @@ export async function deletePackageTier(id: number) {
         .eq("id", id)
 
     if (error) throw error
-    revalidatePath("/siteadmin/package-tiers")
 }
 
 
