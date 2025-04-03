@@ -8,7 +8,14 @@ import { DEFAULT_DISCLAIMER } from "@/lib/sidebarData"
 import { createPackageDescription, getPackageDescriptionByPackageId, updatePackageDescriptionByPackageId, PackageDescription } from "@/app/actions/siteadmin/package_descriptions"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { z } from "zod"
 
+// Define a Zod schema for the package description form.
+const packageDescSchema = z.object({
+    long_description: z.string().min(1, { message: "Long description is required" }),
+    reader_notice: z.string().min(1, { message: "Disclaimer is required" }),
+    package_contents: z.array(z.string()).min(1, { message: "At least one package content is required" }),
+})
 
 export default function PackageDescriptionContentForm({
     mode,
@@ -23,16 +30,17 @@ export default function PackageDescriptionContentForm({
     const [disclaimer, setDisclaimer] = useState(DEFAULT_DISCLAIMER)
     const [packageContents, setPackageContents] = useState<string[]>([])
 
+    // For inline error messages
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
     const [editorWidth, setEditorWidth] = useState(60) // in %
     const isDragging = useRef(false)
-
 
     useEffect(() => {
         async function fetchPackageDetails(id: number) {
             try {
                 let data: PackageDescription = await getPackageDescriptionByPackageId(id)
                 const plainData = JSON.parse(JSON.stringify(data))
-
                 setLongDesc(plainData.long_description || "")
                 setDisclaimer(plainData.reader_notice || DEFAULT_DISCLAIMER)
                 setPackageContents(plainData.package_contents || [])
@@ -45,7 +53,6 @@ export default function PackageDescriptionContentForm({
             fetchPackageDetails(Number(packageId))
         }
     }, [mode, packageId])
-
 
     const DIVIDER_WIDTH_PX = 40 // width 4px + 2*margin 2px
 
@@ -76,6 +83,45 @@ export default function PackageDescriptionContentForm({
         window.onmouseup = handleMouseUp
     }
 
+    // Function to validate and save the package description
+    const handleSave = async () => {
+        if (!packageId) return
+
+        const payload = {
+            long_description: longDesc,
+            reader_notice: disclaimer,
+            package_contents: packageContents,
+        }
+
+        const result = packageDescSchema.safeParse(payload)
+        if (!result.success) {
+            const errors: Record<string, string> = {}
+            for (const [field, messages] of Object.entries(result.error.formErrors.fieldErrors)) {
+                if (messages && messages.length > 0) {
+                    errors[field] = messages[0]
+                }
+            }
+            setFormErrors(errors)
+            return
+        }
+        // Clear errors if validation passes
+        setFormErrors({})
+
+        try {
+            if (mode === "edit") {
+                await updatePackageDescriptionByPackageId(Number(packageId), payload)
+            } else {
+                await createPackageDescription({
+                    package_id: Number(packageId),
+                    ...payload,
+                })
+            }
+            router.push("/dashboard/product-settings/packages")
+        } catch (error) {
+            console.error("Error saving package description:", error)
+        }
+    }
+
     return (
         <div className="w-full h-full gap-4 flex flex-col">
             <div className="w-full h-full flex flex-col lg:flex-row items-stretch justify-between relative">
@@ -99,13 +145,19 @@ export default function PackageDescriptionContentForm({
                             onChange={(e) => setLongDesc(e.target.value)}
                             placeholder="Write the main product description here..."
                         />
+                        {formErrors.long_description && (
+                            <p className="text-red-500 text-sm">{formErrors.long_description}</p>
+                        )}
                     </Card>
 
                     <PackageContentList
-                        key={packageContents.join(",")} // Forces re-render when data changes
+                        key={packageContents.join(",")}
                         initialItems={packageContents}
                         onChange={setPackageContents}
                     />
+                    {formErrors.package_contents && (
+                        <p className="text-red-500 text-sm">{formErrors.package_contents}</p>
+                    )}
 
                     <Card className="p-4 gap-3">
                         <h3 className="text-lg font-bold">Disclaimer</h3>
@@ -115,6 +167,9 @@ export default function PackageDescriptionContentForm({
                             value={disclaimer}
                             onChange={(e) => setDisclaimer(e.target.value)}
                         />
+                        {formErrors.reader_notice && (
+                            <p className="text-red-500 text-sm">{formErrors.reader_notice}</p>
+                        )}
                     </Card>
                 </Card>
 
@@ -138,14 +193,12 @@ export default function PackageDescriptionContentForm({
                                 This is how the package description will appear to customers.
                             </p>
                         </Card>
-
                         <Card className="p-4 gap-3">
                             <h3 className="text-lg font-bold">Description</h3>
                             <p className="whitespace-pre-line text-muted-foreground">
                                 {longDesc || "No description provided yet."}
                             </p>
                         </Card>
-
                         <Card className="p-4 gap-3">
                             <h3 className="text-lg font-bold">Contents</h3>
                             <ul className="list-disc pl-5 text-muted-foreground whitespace-pre-line">
@@ -154,7 +207,6 @@ export default function PackageDescriptionContentForm({
                                     : <li>No contents listed.</li>}
                             </ul>
                         </Card>
-
                         <Card className="p-4 gap-3">
                             <h3 className="text-lg font-bold">Disclaimer</h3>
                             <p className="whitespace-pre-line text-muted-foreground">
@@ -166,31 +218,7 @@ export default function PackageDescriptionContentForm({
             </div>
 
             <div className="flex justify-end mt-4">
-                <Button
-                    onClick={async () => {
-                        if (!packageId) return
-                        try {
-                            if (mode === "edit") {
-                                await updatePackageDescriptionByPackageId(Number(packageId), {
-                                    long_description: longDesc,
-                                    reader_notice: disclaimer,
-                                    package_contents: packageContents,
-                                })
-                            } else {
-                                await createPackageDescription({
-                                    package_id: Number(packageId),
-                                    long_description: longDesc,
-                                    reader_notice: disclaimer,
-                                    package_contents: packageContents,
-                                })
-                            }
-
-                            router.push("/dashboard/product-settings/packages")
-                        } catch (error) {
-                            console.error("Error saving package description:", error)
-                        }
-                    }}
-                >
+                <Button onClick={handleSave}>
                     {mode === "edit" ? "Update Package Description" : "Create Package Description"}
                 </Button>
             </div>

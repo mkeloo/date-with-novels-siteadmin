@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
 import { cn, slugify } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
@@ -15,16 +15,36 @@ import LucideIcon from "@/components/reusable/LucideIcon"
 import { getPackagesById, Packages } from "@/app/actions/siteadmin/packages"
 import { getPackageTiers, getSupportFlagsByPackageTierId } from "@/app/actions/siteadmin/package_tier"
 import { getThemes } from "@/app/actions/siteadmin/themes"
-
+import { z } from "zod"
 
 const GENRES = [
-    "Romance", "Mystery", "Thriller", "Young Adult Fiction", "Fantasy", "Horror", "Surprise Me"
+    "Romance",
+    "Mystery",
+    "Thriller",
+    "Young Adult Fiction",
+    "Fantasy",
+    "Horror",
+    "Surprise Me"
 ]
+
+const packageSchema = z.object({
+    is_enabled: z.boolean(),
+    // Require a valid theme id (a number greater than 0)
+    theme_id: z.number({ required_error: "Theme is required" }).min(1, "Theme is required"),
+    name: z.string().min(1, "Title is required"),
+    slug: z.string().min(1, "Slug is required"),
+    short_description: z.string().min(1, "Description is required"),
+    price: z.number({ invalid_type_error: "Price must be a number" }).positive("Price must be greater than zero"),
+    allowed_genres: z.array(z.string()).min(1, "At least one genre must be selected"),
+    icon_name: z.string().min(1, "Icon name is required"),
+    sort: z.number(),
+    package_tier: z.number({ required_error: "Package tier is required" }).min(1, "Package tier is required"),
+})
 
 type PackagesFormClientProps = {
     mode: "create" | "edit"
     packageId: string | null
-    onPackageCreated?: (id: number) => void // <- new prop
+    onPackageCreated?: (id: number) => void
 }
 
 type FieldChange = {
@@ -39,15 +59,12 @@ type DialogData = Packages & {
 export default function PackagesFormClient({ mode, packageId, onPackageCreated }: PackagesFormClientProps) {
     const [loading, setLoading] = useState(mode === "edit")
     const [isEnabled, setIsEnabled] = useState(false)
-    const [packageTierId, setPackageTierId] = useState<number | null>(null);
-    const [packageTiers, setPackageTiers] = useState<{ id: number; name: string }[]>([]);
-    const [theme, setTheme] = useState<string>("");
-    const [themes, setThemes] = useState<{
-        id: number;
-        theme_name: string;
-        supports_themed: boolean;
-        supports_regular: boolean;
-    }[]>([]);
+    const [packageTierId, setPackageTierId] = useState<number | null>(null)
+    const [packageTiers, setPackageTiers] = useState<{ id: number; name: string }[]>([])
+    const [theme, setTheme] = useState<string>("")
+    const [themes, setThemes] = useState<
+        { id: number; theme_name: string; supports_themed: boolean; supports_regular: boolean }[]
+    >([])
     const [title, setTitle] = useState("")
     const [slug, setSlug] = useState("")
     const [shortDescription, setShortDescription] = useState("")
@@ -55,6 +72,8 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
     const [genres, setGenres] = useState<string[]>([])
     const [iconName, setIconName] = useState("Book")
 
+    // For holding field-specific error messages
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
     const [showDialog, setShowDialog] = useState(false)
     const [originalData, setOriginalData] = useState<Packages | null>(null)
@@ -62,92 +81,76 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
 
     const router = useRouter()
 
-
-
+    // Update slug based on title and theme (read from local state)
     useEffect(() => {
         if (!theme) {
-            setSlug(slugify(title));
-            return;
+            setSlug(slugify(title))
+            return
         }
-
-        const selectedTheme = themes.find((t) => t.id.toString() === theme);
-        const themeLabel = selectedTheme?.theme_name;
+        const selectedTheme = themes.find((t) => t.id.toString() === theme)
+        const themeLabel = selectedTheme?.theme_name
         const newSlug =
             title +
-            (themeLabel && themeLabel.toLowerCase() !== "regular" ? ` ${themeLabel}` : "");
-        setSlug(slugify(newSlug));
-    }, [title, theme, themes]);
-
+            (themeLabel && themeLabel.toLowerCase() !== "regular" ? ` ${themeLabel}` : "")
+        setSlug(slugify(newSlug))
+    }, [title, theme, themes])
 
     useEffect(() => {
         async function fetchTiers() {
             try {
-                const data = await getPackageTiers();
-                // Map the fetched tiers to an array of { id, name }
-                setPackageTiers(data.map((t) => ({ id: t.id, name: t.name })));
+                const data = await getPackageTiers()
+                setPackageTiers(data.map((t) => ({ id: t.id, name: t.name })))
             } catch (error) {
-                console.error("Failed to fetch package tiers:", error);
+                console.error("Failed to fetch package tiers:", error)
             }
         }
-        fetchTiers();
-    }, []);
-
+        fetchTiers()
+    }, [])
 
     useEffect(() => {
         async function fetchPackages(id: number) {
             try {
-                const data: Packages = await getPackagesById(id);
-                setIsEnabled(data.is_enabled);
-                setPackageTierId(data.package_tier);
-                setTheme(data.theme_id?.toString() || "");
-                setTitle(data.name);
-                setShortDescription(data.short_description);
-                setPrice(data.price.toString());
-                setGenres(data.allowed_genres);
-                setIconName(data.icon_name);
-                setOriginalData(data);
+                const data: Packages = await getPackagesById(id)
+                setIsEnabled(data.is_enabled)
+                setPackageTierId(data.package_tier)
+                setTheme(data.theme_id?.toString() || "")
+                setTitle(data.name)
+                setShortDescription(data.short_description)
+                setPrice(data.price.toString())
+                setGenres(data.allowed_genres)
+                setIconName(data.icon_name)
+                setOriginalData(data)
             } catch (error) {
-                console.error("Failed to fetch package tier:", error);
+                console.error("Failed to fetch package tier:", error)
             } finally {
-                setLoading(false);
+                setLoading(false)
             }
         }
-
         if (mode === "edit" && packageId) {
-            fetchPackages(Number(packageId));
+            fetchPackages(Number(packageId))
         } else {
-            setLoading(false);
+            setLoading(false)
         }
-    }, [mode, packageId]);
-
+    }, [mode, packageId])
 
     useEffect(() => {
         async function fetchFilteredThemes() {
-            if (!packageTierId) return;
-
+            if (!packageTierId) return
             try {
-                const supportFlags = await getSupportFlagsByPackageTierId(packageTierId);
-                const allThemesRaw = await getThemes();
-
-                // Filter based on new supports_themed/supports_regular flags on the theme itself
+                const supportFlags = await getSupportFlagsByPackageTierId(packageTierId)
+                const allThemesRaw = await getThemes()
                 const filteredThemes = allThemesRaw.filter((theme) => {
-                    if (theme.supports_themed && supportFlags.supports_themed) return true;
-                    if (theme.supports_regular && supportFlags.supports_regular) return true;
-                    return false;
-                });
-
-                setThemes(filteredThemes);
-                // console.log("Filtered themes based on package tier ID:", filteredThemes);
+                    if (theme.supports_themed && supportFlags.supports_themed) return true
+                    if (theme.supports_regular && supportFlags.supports_regular) return true
+                    return false
+                })
+                setThemes(filteredThemes)
             } catch (error) {
-                console.error("Failed to fetch filtered themes:", error);
+                console.error("Failed to fetch filtered themes:", error)
             }
         }
-
-        // console.log("Fetching filtered themes for package tier ID:", packageTierId);
-        fetchFilteredThemes();
-    }, [packageTierId]);
-
-
+        fetchFilteredThemes()
+    }, [packageTierId])
 
     const toggleGenre = (genre: string) => {
         setGenres((prev) =>
@@ -158,9 +161,10 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Build payload for validation
         const payload = {
             is_enabled: isEnabled,
-            theme_id: theme ? parseInt(theme) : null,
+            theme_id: theme ? parseInt(theme) : NaN,
             name: title,
             slug,
             short_description: shortDescription,
@@ -168,15 +172,28 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
             allowed_genres: genres,
             icon_name: iconName,
             sort: 0,
-            package_tier: packageTierId ?? 1,
+            package_tier: packageTierId ?? NaN,
         }
+
+        // Validate using Zod
+        const result = packageSchema.safeParse(payload)
+        if (!result.success) {
+            const errors: Record<string, string> = {}
+            for (const [field, messages] of Object.entries(result.error.formErrors.fieldErrors)) {
+                if (messages && messages.length > 0) {
+                    errors[field] = messages[0]
+                }
+            }
+            setFormErrors(errors)
+            return
+        }
+        // Clear any previous errors if validation passes
+        setFormErrors({})
 
         try {
             if (mode === "edit" && packageId && originalData) {
                 const { updatePackages } = await import("../../../app/actions/siteadmin/packages")
                 await updatePackages(parseInt(packageId), payload)
-
-                // Compute changes
                 const changes = Object.entries(payload).reduce((acc, [key, value]) => {
                     const originalValue = (originalData as any)[key]
                     if (JSON.stringify(value) !== JSON.stringify(originalValue)) {
@@ -184,23 +201,19 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                     }
                     return acc
                 }, {} as Record<string, FieldChange>)
-
                 setDialogData({ ...originalData, ...payload, changes })
             } else {
                 const { createPackages } = await import("../../../app/actions/siteadmin/packages")
                 const newTier = await createPackages(payload)
-
                 setDialogData({
-                    ...newTier, // Use response if it returns new data, else payload
-                    updated_at: new Date().toISOString(), // current timestamp
+                    ...newTier,
+                    updated_at: new Date().toISOString(),
                 })
                 onPackageCreated?.(newTier.id)
             }
-
             setShowDialog(true)
         } catch (error) {
             console.error("Submission error:", error)
-            alert("Failed to save package tier.")
         }
     }
 
@@ -228,7 +241,7 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                         </div>
 
                         <div className="w-full flex flex-col">
-                            <Label>Package Tier</Label>
+                            <Label>Package Tier *</Label>
                             <Select
                                 value={packageTierId?.toString() || ""}
                                 onValueChange={(val) => setPackageTierId(parseInt(val))}
@@ -244,28 +257,29 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {formErrors.package_tier && <p className="text-red-500 text-sm">{formErrors.package_tier}</p>}
                         </div>
 
-
                         <div className="w-full flex flex-col">
-                            <Label>Theme Type</Label>
+                            <Label>Theme Type *</Label>
                             <Select value={theme} onValueChange={setTheme}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Select Theme" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {themes.map((themeObj: { id: number; theme_name: string; supports_themed: boolean; supports_regular: boolean }) => (
+                                    {themes.map((themeObj) => (
                                         <SelectItem key={themeObj.id} value={themeObj.id.toString()}>
                                             {themeObj.theme_name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {formErrors.theme_id && <p className="text-red-500 text-sm">{formErrors.theme_id}</p>}
                         </div>
                     </Card>
 
                     <Card className="w-full lg:w-1/2 p-4">
-                        <h2 className="text-lg font-semibold">Genres</h2>
+                        <h2 className="text-lg font-semibold">Genres *</h2>
                         <div className="flex flex-wrap gap-3">
                             {GENRES.map((genre) => (
                                 <button
@@ -283,10 +297,11 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                 </button>
                             ))}
                         </div>
+                        {formErrors.allowed_genres && <p className="text-red-500 text-sm">{formErrors.allowed_genres}</p>}
 
                         <div className="">
                             <Label className="flex items-center gap-3">
-                                Icon
+                                Icon *
                                 <a
                                     href="https://lucide.dev/icons"
                                     target="_blank"
@@ -296,7 +311,6 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                     Browse icons ↗
                                 </a>
                             </Label>
-
                             <div className="w-full flex items-center gap-3">
                                 <Input
                                     value={iconName}
@@ -309,6 +323,7 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                     <LucideIcon iconName={iconName} className="w-5 h-5 text-foreground hover:scale-110 hover:text-blue-300 transition duration-300" />
                                 </div>
                             </div>
+                            {formErrors.icon_name && <p className="text-red-500 text-sm">{formErrors.icon_name}</p>}
                         </div>
                     </Card>
                 </div>
@@ -316,35 +331,35 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card className="p-4">
                         <div className="w-full flex flex-col">
-                            <Label>Title</Label>
+                            <Label>Title *</Label>
                             <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                            {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
                         </div>
-
                         <div className="w-full flex flex-col">
                             <Label>Slug</Label>
                             <Input value={slug} readOnly />
+                            {formErrors.slug && <p className="text-red-500 text-sm">{formErrors.slug}</p>}
                         </div>
-
                     </Card>
 
                     <Card className="p-4">
                         <div className="w-full flex flex-col">
-                            <Label>Price ($)</Label>
+                            <Label>Price ($) *</Label>
                             <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+                            {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
                         </div>
-
                         <div className="w-full flex flex-col">
-                            <Label>Description</Label>
+                            <Label>Description *</Label>
                             <Input
                                 value={shortDescription}
                                 maxLength={160}
                                 onChange={(e) => setShortDescription(e.target.value)}
                             />
+                            {formErrors.short_description && <p className="text-red-500 text-sm">{formErrors.short_description}</p>}
                         </div>
                     </Card>
                 </div>
 
-                {/* Submit Button */}
                 <div className="flex justify-end pt-4">
                     <Button disableLoader type="submit">
                         {mode === "edit" ? "Update Package Tier" : "Create Package Tier"}
@@ -363,7 +378,6 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                 <h2 className="text-xl font-semibold">{dialogData.name}</h2>
                                 <LucideIcon iconName={dialogData.icon_name} className="w-6 h-6 text-muted-foreground" />
                             </div>
-
                             <div className="text-sm space-y-2">
                                 {mode === "edit" && dialogData.changes ? (
                                     <>
@@ -382,23 +396,33 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                     </>
                                 ) : (
                                     <>
-                                        <p><strong>Slug:</strong> {dialogData.slug}</p>
-                                        <p><strong>Enabled:</strong> {dialogData.is_enabled ? "Yes" : "No"}</p>
-                                        <p><strong>Package Tier:</strong> {dialogData.package_tier}</p>
-                                        <p><strong>Theme ID:</strong> {dialogData.theme_id ?? "None"}</p>
-                                        <p><strong>Description:</strong> {dialogData.short_description}</p>
-                                        <p><strong>Price:</strong> ${dialogData.price.toFixed(2)}</p>
-                                        <p><strong>Genres:</strong> {dialogData.allowed_genres.join(", ")}</p>
-                                        <p><strong>Package Contents:</strong></p>
-
+                                        <p>
+                                            <strong>Slug:</strong> {dialogData.slug}
+                                        </p>
+                                        <p>
+                                            <strong>Enabled:</strong> {dialogData.is_enabled ? "Yes" : "No"}
+                                        </p>
+                                        <p>
+                                            <strong>Package Tier:</strong> {dialogData.package_tier}
+                                        </p>
+                                        <p>
+                                            <strong>Theme ID:</strong> {dialogData.theme_id ?? "None"}
+                                        </p>
+                                        <p>
+                                            <strong>Description:</strong> {dialogData.short_description}
+                                        </p>
+                                        <p>
+                                            <strong>Price:</strong> ${dialogData.price.toFixed(2)}
+                                        </p>
+                                        <p>
+                                            <strong>Genres:</strong> {dialogData.allowed_genres.join(", ")}
+                                        </p>
                                     </>
                                 )}
-
                                 <p className="text-xs text-muted-foreground">
                                     Last Updated: {new Date(dialogData.updated_at).toLocaleString()}
                                 </p>
                             </div>
-
                             <div className="flex justify-end">
                                 <Button onClick={() => router.push("/dashboard/product-settings/package-tiers")}>
                                     Go Back to Overview
