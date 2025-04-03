@@ -24,6 +24,7 @@ const GENRES = [
 type PackagesFormClientProps = {
     mode: "create" | "edit"
     packageId: string | null
+    onPackageCreated?: (id: number) => void // <- new prop
 }
 
 type FieldChange = {
@@ -35,7 +36,7 @@ type DialogData = Packages & {
     changes?: Record<string, FieldChange>
 }
 
-export default function PackagesFormClient({ mode, packageId }: PackagesFormClientProps) {
+export default function PackagesFormClient({ mode, packageId, onPackageCreated }: PackagesFormClientProps) {
     const [loading, setLoading] = useState(mode === "edit")
     const [isEnabled, setIsEnabled] = useState(false)
     const [packageTierId, setPackageTierId] = useState<number | null>(null);
@@ -206,6 +207,7 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
                     ...newTier, // Use response if it returns new data, else payload
                     updated_at: new Date().toISOString(), // current timestamp
                 })
+                onPackageCreated?.(newTier.id)
             }
 
             setShowDialog(true)

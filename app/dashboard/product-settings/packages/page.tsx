@@ -7,43 +7,74 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
-import { getPackages, deletePackages } from "../../../actions/siteadmin/packages"
+import { getPackages, deletePackages, Packages } from "@/app/actions/siteadmin/packages"
+import { getPackageTierById } from "@/app/actions/siteadmin/package_tier"
 import LucideIcon from "@/components/reusable/LucideIcon"
-import type { Packages } from "../../../actions/siteadmin/packages"
+import PackageMoreInfoDialog from "@/components/reusable/Dialogs/PackageMoreInfoDialog"
+
 
 export default function PackagesOverviewPage() {
-    const [tiers, setTiers] = useState<Packages[]>([])
+    const [packages, setPackages] = useState<Packages[]>([])
     const [loading, setLoading] = useState(true)
     const [showDelete, setShowDelete] = useState(false)
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+    const [packageTierName, setPackageTierName] = useState<Record<number, string>>({})
 
-    // Fetch tiers on mount
+    // Fetch packages on mount
+    // useEffect(() => {
+    //     const fetchAllPackages = async () => {
+    //         try {
+    //             const res = await getPackages()
+    //             setPackages(res)
+    //         } catch (err) {
+    //             console.error("Failed to fetch packages:", err)
+    //         } finally {
+    //             setLoading(false)
+    //         }
+    //     }
+    //     fetchAllPackages()
+    // }, [])
+
     useEffect(() => {
-        const fetchTiers = async () => {
+        const fetchAllPackages = async () => {
             try {
                 const res = await getPackages()
-                setTiers(res)
+                setPackages(res)
+
+                const tierIdSet = new Set(res.map((pkg) => pkg.package_tier))
+                const tierNameMap: Record<number, string> = {}
+
+                for (const id of tierIdSet) {
+                    try {
+                        const tier = await getPackageTierById(id)
+                        tierNameMap[id] = tier.name
+                    } catch (err) {
+                        console.error(`Failed to get package tier name for ID ${id}`, err)
+                        tierNameMap[id] = "Unknown Tier"
+                    }
+                }
+
+                setPackageTierName(tierNameMap)
             } catch (err) {
-                console.error("Failed to fetch package tiers:", err)
+                console.error("Failed to fetch packages:", err)
             } finally {
                 setLoading(false)
             }
         }
-        fetchTiers()
+
+        fetchAllPackages()
     }, [])
 
     const handleDelete = async (id: number) => {
         try {
             await deletePackages(id)
-            setTiers((prev) => prev.filter((tier) => tier.id !== id))
             setConfirmDeleteId(null)
         } catch (err) {
-            console.error("Failed to delete package tier:", err)
-            alert("Failed to delete package.")
+            console.error("Failed to delete package package:", err)
         }
     }
 
-    if (loading) return <p>Loading package tiers...</p>
+    if (loading) return <p>Loading packages...</p>
 
     return (
         <div className="space-y-6">
@@ -65,18 +96,18 @@ export default function PackagesOverviewPage() {
 
             {/* Package Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tiers.map((tier) => (
-                    <Card key={tier.id} className="p-4 space-y-2 relative">
+                {packages.map((packageItem) => (
+                    <Card key={packageItem.id} className="p-4 space-y-2 relative">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">{tier.name}</h2>
-                            <LucideIcon iconName={tier.icon_name} className="w-5 h-5 text-muted-foreground" />
+                            <h2 className="text-lg font-semibold">{packageItem.name}</h2>
+                            <LucideIcon iconName={packageItem.icon_name} className="w-5 h-5 text-muted-foreground" />
                         </div>
-                        <p className="text-sm text-muted-foreground">{tier.short_description}</p>
+                        <p className="text-sm text-muted-foreground">{packageItem.short_description}</p>
 
                         <div className="text-sm text-muted-foreground space-y-1">
-                            {/* <p><strong>Tier:</strong> {tier.tier_type.replace("_", " ")}</p> */}
-                            <p><strong>Price:</strong> ${tier.price.toFixed(2)}</p>
-                            <p><strong>Updated:</strong> {format(new Date(tier.updated_at), "PPpp")}</p>
+                            <p><strong>Price:</strong> ${packageItem.price.toFixed(2)}</p>
+                            <p><strong>Updated:</strong> {format(new Date(packageItem.updated_at), "PPpp")}</p>
+                            <p><strong>Package Tier:</strong> {packageTierName[packageItem.package_tier] || "Loading..."}</p>
                         </div>
 
                         {/* Action Buttons */}
@@ -91,36 +122,15 @@ export default function PackagesOverviewPage() {
                                 </VisuallyHidden.Root>
                                 <DialogContent className="max-w-lg space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h2 className="text-xl font-semibold">{tier.name}</h2>
-                                        <LucideIcon iconName={tier.icon_name} className="w-6 h-6 text-muted-foreground" />
+                                        <h2 className="text-xl font-semibold">{packageItem.name}</h2>
+                                        <LucideIcon iconName={packageItem.icon_name} className="w-6 h-6 text-muted-foreground" />
                                     </div>
-
-                                    <div className="text-sm space-y-1">
-                                        <p><strong>Slug:</strong> {tier.slug}</p>
-                                        <p><strong>Enabled:</strong> {tier.is_enabled ? "Yes" : "No"}</p>
-                                        <p><strong>Sort Order:</strong> {tier.sort}</p>
-                                        <p><strong>Icon Name:</strong> {tier.icon_name}</p>
-                                        {/* <p><strong>Tier Type:</strong> {tier.tier_type}</p> */}
-                                        <p><strong>Theme ID:</strong> {tier.theme_id ?? "None"}</p>
-                                        <p><strong>Supports Themed:</strong> {tier.supports_themed ? "Yes" : "No"}</p>
-                                        <p><strong>Supports Regular:</strong> {tier.supports_regular ? "Yes" : "No"}</p>
-                                        <p><strong>Description:</strong> {tier.short_description}</p>
-                                        <p><strong>Price:</strong> ${tier.price.toFixed(2)}</p>
-                                        <p><strong>Genres:</strong> {tier.allowed_genres.join(", ")}</p>
-                                        <p><strong>Package Contents:</strong></p>
-                                        <ul className="list-disc pl-5">
-                                            {tier.package_contents?.map((item, idx) => (
-                                                <li key={idx}>{item}</li>
-                                            ))}
-                                        </ul>
-                                        <p className="text-xs text-muted-foreground">
-                                            Last Updated: {format(new Date(tier.updated_at), "PPpp")}
-                                        </p>
-                                    </div>
+                                    {/* Render our dialog content body for this packageItem */}
+                                    <PackageMoreInfoDialog tier={packageItem} />
                                 </DialogContent>
                             </Dialog>
 
-                            <Link href={`/dashboard/product-settings/packages/package-tier-form?mode=edit&id=${tier.id}`}>
+                            <Link href={`/dashboard/product-settings/packages/package-tier-form?mode=edit&id=${packageItem.id}`}>
                                 <Button size="sm" variant="secondary">Edit</Button>
                             </Link>
 
@@ -128,7 +138,7 @@ export default function PackagesOverviewPage() {
                                 <Button
                                     size="sm"
                                     variant="destructive"
-                                    onClick={() => setConfirmDeleteId(tier.id)}
+                                    onClick={() => setConfirmDeleteId(packageItem.id)}
                                 >
                                     Delete
                                 </Button>
@@ -136,19 +146,13 @@ export default function PackagesOverviewPage() {
                         </div>
 
                         {/* Delete Confirmation Dialog */}
-                        <Dialog open={confirmDeleteId === tier.id} onOpenChange={() => setConfirmDeleteId(null)}>
+                        <Dialog open={confirmDeleteId === packageItem.id} onOpenChange={() => setConfirmDeleteId(null)}>
                             <DialogContent className="max-w-md">
-                                <DialogTitle className="text-lg font-semibold">
-                                    Confirm Deletion
-                                </DialogTitle>
-                                <p>Are you sure you want to delete <strong>{tier.name}</strong>? This action cannot be undone.</p>
+                                <DialogTitle className="text-lg font-semibold">Confirm Deletion</DialogTitle>
+                                <p>Are you sure you want to delete <strong>{packageItem.name}</strong>? This action cannot be undone.</p>
                                 <div className="flex justify-end gap-2">
-                                    <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
-                                        Cancel
-                                    </Button>
-                                    <Button variant="destructive" onClick={() => handleDelete(tier.id)}>
-                                        Confirm Delete
-                                    </Button>
+                                    <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+                                    <Button variant="destructive" onClick={() => handleDelete(packageItem.id)}>Confirm Delete</Button>
                                 </div>
                             </DialogContent>
                         </Dialog>

@@ -1,16 +1,29 @@
 // app/dashboard/product-settings/package-tiers/package-tier-form/page.tsx
 "use client"
 
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import PackageTierFormClient from "@/components/siteadmin/Pages/PackageTierFormClient"
 import PackageDescriptionContentForm from "@/components/siteadmin/Pages/PackageDescriptionContentForm"
 import { Card } from "@/components/ui/card"
+import { useState } from "react"
 
 export default function PackageTierFormPage() {
     const searchParams = useSearchParams()
+    const router = useRouter()
+
     const mode = (searchParams.get("mode") === "edit" ? "edit" : "create") as "create" | "edit"
     const id = searchParams.get("id") || null
+    const initialId = searchParams.get("id") || null
+    const [packageId, setPackageId] = useState<string | null>(initialId)
+
+    // Optional: Update URL with new ID after creation
+    const handlePackageCreated = (newId: number) => {
+        setPackageId(newId.toString())
+        // router.replace(
+        //     `/dashboard/product-settings/package-tiers/package-tier-form?mode=create&id=${newId}`
+        // )
+    }
 
     return (
         <Tabs defaultValue="info" className="w-full">
@@ -32,12 +45,14 @@ export default function PackageTierFormPage() {
             </Card>
 
             <TabsContent value="info" className="tab-transition">
-                <PackageTierFormClient mode={mode} packageId={id} />
+                <PackageTierFormClient mode={mode} packageId={id} onPackageCreated={handlePackageCreated} />
             </TabsContent>
 
-            <TabsContent value="description" className="tab-transition">
-                <PackageDescriptionContentForm mode={mode} packageId={id} />
-            </TabsContent>
+            {packageId && (
+                <TabsContent value="description" className="tab-transition">
+                    <PackageDescriptionContentForm mode={mode} packageId={packageId} />
+                </TabsContent>
+            )}
         </Tabs>
     )
 }
