@@ -104,30 +104,32 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
 
 
     useEffect(() => {
-        async function fetchFilteredThemes() {
-            if (!packageTierId) return;
-
+        async function fetchPackages(id: number) {
             try {
-                const supportFlags = await getSupportFlagsByPackageTierId(packageTierId);
-                const allThemesRaw = await getThemes();
-
-                // Filter based on new supports_themed/supports_regular flags on the theme itself
-                const filteredThemes = allThemesRaw.filter((theme) => {
-                    if (theme.supports_themed && supportFlags.supports_themed) return true;
-                    if (theme.supports_regular && supportFlags.supports_regular) return true;
-                    return false;
-                });
-
-                setThemes(filteredThemes);
-                console.log("Filtered themes based on package tier ID:", filteredThemes);
+                const data: Packages = await getPackagesById(id);
+                setIsEnabled(data.is_enabled);
+                setPackageTierId(data.package_tier);
+                setTheme(data.theme_id?.toString() || "");
+                setTitle(data.name);
+                setShortDescription(data.short_description);
+                setPrice(data.price.toString());
+                setGenres(data.allowed_genres);
+                setIconName(data.icon_name);
+                setPackageContents(data.package_contents || []);
+                setOriginalData(data);
             } catch (error) {
-                console.error("Failed to fetch filtered themes:", error);
+                console.error("Failed to fetch package tier:", error);
+            } finally {
+                setLoading(false);
             }
         }
 
-        console.log("Fetching filtered themes for package tier ID:", packageTierId);
-        fetchFilteredThemes();
-    }, [packageTierId]);
+        if (mode === "edit" && packageId) {
+            fetchPackages(Number(packageId));
+        } else {
+            setLoading(false);
+        }
+    }, [mode, packageId]);
 
 
     useEffect(() => {
@@ -213,9 +215,9 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
         }
     }
 
-    // if (loading) {
-    //     return <div className="p-4">Loading package details...</div>
-    // }
+    if (loading) {
+        return <div className="p-4">Loading package details...</div>
+    }
 
     return (
         <form onSubmit={handleSubmit}>
