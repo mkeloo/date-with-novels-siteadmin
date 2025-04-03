@@ -14,7 +14,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import LucideIcon from "@/components/reusable/LucideIcon"
 import { getPackagesById, Packages } from "@/app/actions/siteadmin/packages"
 import { getPackageTiers, getSupportFlagsByPackageTierId } from "@/app/actions/siteadmin/package_tier"
-import { getThemes, getSupportFlagsByThemes } from "@/app/actions/siteadmin/themes"
+import { getThemes } from "@/app/actions/siteadmin/themes"
 
 
 const GENRES = [
