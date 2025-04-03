@@ -8,20 +8,19 @@ export type Packages = {
     id: number
     name: string
     slug: string
-    tier_type: "first_chapter" | "classic" | "themed"
     theme_id: number | null
-    supports_themed: boolean
-    supports_regular: boolean
     short_description: string
     is_enabled: boolean
     icon_name: string
     sort: number
     price: number
     allowed_genres: string[]
-    package_contents: string[] // ✅ newly added
+    package_contents: string[]
+    package_tier: number
     created_at: string
     updated_at: string
 }
+
 
 // Get all package tiers
 export async function getPackages(): Promise<Packages[]> {

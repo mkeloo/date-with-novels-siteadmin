@@ -100,7 +100,7 @@ export default function PackagesOverviewPage() {
                                         <p><strong>Enabled:</strong> {tier.is_enabled ? "Yes" : "No"}</p>
                                         <p><strong>Sort Order:</strong> {tier.sort}</p>
                                         <p><strong>Icon Name:</strong> {tier.icon_name}</p>
-                                        <p><strong>Tier Type:</strong> {tier.tier_type}</p>
+                                        {/* <p><strong>Tier Type:</strong> {tier.tier_type}</p> */}
                                         <p><strong>Theme ID:</strong> {tier.theme_id ?? "None"}</p>
                                         <p><strong>Supports Themed:</strong> {tier.supports_themed ? "Yes" : "No"}</p>
                                         <p><strong>Supports Regular:</strong> {tier.supports_regular ? "Yes" : "No"}</p>

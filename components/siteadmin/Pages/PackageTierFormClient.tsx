@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn, slugify } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import LucideIcon from "@/components/reusable/LucideIcon"
 import { getPackagesById, Packages } from "../../../app/actions/siteadmin/packages"
+import { getPackageTiers } from "../../../app/actions/siteadmin/package_tier"
 
 // Dummy data
 const PACKAGE_TIERS = [
@@ -49,7 +50,8 @@ type DialogData = Packages & {
 export default function PackagesFormClient({ mode, packageId }: PackagesFormClientProps) {
     const [loading, setLoading] = useState(mode === "edit")
     const [isEnabled, setIsEnabled] = useState(false)
-    const [tierType, setTierType] = useState("")
+    const [packageTierId, setPackageTierId] = useState<number | null>(null);
+    const [packageTiers, setPackageTiers] = useState<{ id: number; name: string }[]>([]);
     const [theme, setTheme] = useState("")
     const [title, setTitle] = useState("")
     const [slug, setSlug] = useState("")
@@ -72,12 +74,27 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
         setSlug(slugify(title + (themeLabel && themeLabel !== "Regular" ? ` ${themeLabel}` : "")));
     }, [title, theme]);
 
+
+    useEffect(() => {
+        async function fetchTiers() {
+            try {
+                const data = await getPackageTiers();
+                // Map the fetched tiers to an array of { id, name }
+                setPackageTiers(data.map((t) => ({ id: t.id, name: t.name })));
+            } catch (error) {
+                console.error("Failed to fetch package tiers:", error);
+            }
+        }
+        fetchTiers();
+    }, []);
+
+
     useEffect(() => {
         async function fetchPackages(id: number) {
             try {
                 const data: Packages = await getPackagesById(id)
                 setIsEnabled(data.is_enabled)
-                setTierType(data.tier_type)
+                setPackageTierId(data.package_tier)
                 setTheme(data.theme_id?.toString() || "")
                 setTitle(data.name)
                 setShortDescription(data.short_description)
@@ -113,7 +130,6 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
 
         const payload = {
             is_enabled: isEnabled,
-            tier_type: tierType as "first_chapter" | "classic" | "themed",
             theme_id: theme ? parseInt(theme) : null,
             name: title,
             slug,
@@ -121,10 +137,9 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
             price: parseFloat(price),
             allowed_genres: genres,
             icon_name: iconName,
-            supports_themed: tierType !== "classic",
-            supports_regular: tierType !== "themed",
             sort: 0,
             package_contents: packageContents,
+            package_tier: packageTierId ?? 1,
         }
 
         try {
@@ -182,15 +197,18 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
                             </div>
                         </div>
 
-                        <Label>Package Tier Type</Label>
-                        <Select value={tierType} onValueChange={setTierType}>
+                        <Label>Package Tier</Label>
+                        <Select
+                            value={packageTierId?.toString() || ""}
+                            onValueChange={(val) => setPackageTierId(parseInt(val))}
+                        >
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select Tier" />
                             </SelectTrigger>
                             <SelectContent>
-                                {PACKAGE_TIERS.map((t) => (
-                                    <SelectItem key={t.value} value={t.value}>
-                                        {t.label}
+                                {packageTiers.map((tier) => (
+                                    <SelectItem key={tier.id} value={tier.id.toString()}>
+                                        {tier.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -322,7 +340,7 @@ export default function PackagesFormClient({ mode, packageId }: PackagesFormClie
                                     <>
                                         <p><strong>Slug:</strong> {dialogData.slug}</p>
                                         <p><strong>Enabled:</strong> {dialogData.is_enabled ? "Yes" : "No"}</p>
-                                        <p><strong>Tier Type:</strong> {dialogData.tier_type}</p>
+                                        <p><strong>Package Tier:</strong> {dialogData.package_tier}</p>
                                         <p><strong>Theme ID:</strong> {dialogData.theme_id ?? "None"}</p>
                                         <p><strong>Description:</strong> {dialogData.short_description}</p>
                                         <p><strong>Price:</strong> ${dialogData.price.toFixed(2)}</p>
