@@ -15,7 +15,6 @@ export type Packages = {
     sort: number
     price: number
     allowed_genres: string[]
-    package_contents: string[]
     package_tier: number
     created_at: string
     updated_at: string

@@ -54,7 +54,6 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
     const [price, setPrice] = useState("")
     const [genres, setGenres] = useState<string[]>([])
     const [iconName, setIconName] = useState("Book")
-    const [packageContents, setPackageContents] = useState<string[]>([])
 
 
     const [showDialog, setShowDialog] = useState(false)
@@ -116,7 +115,6 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                 setPrice(data.price.toString());
                 setGenres(data.allowed_genres);
                 setIconName(data.icon_name);
-                setPackageContents(data.package_contents || []);
                 setOriginalData(data);
             } catch (error) {
                 console.error("Failed to fetch package tier:", error);
@@ -180,7 +178,6 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
             allowed_genres: genres,
             icon_name: iconName,
             sort: 0,
-            package_contents: packageContents,
             package_tier: packageTierId ?? 1,
         }
 
@@ -403,11 +400,7 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                         <p><strong>Price:</strong> ${dialogData.price.toFixed(2)}</p>
                                         <p><strong>Genres:</strong> {dialogData.allowed_genres.join(", ")}</p>
                                         <p><strong>Package Contents:</strong></p>
-                                        <ul className="list-disc pl-5">
-                                            {dialogData.package_contents?.map((item, idx) => (
-                                                <li key={idx}>{item}</li>
-                                            ))}
-                                        </ul>
+
                                     </>
                                 )}
 
