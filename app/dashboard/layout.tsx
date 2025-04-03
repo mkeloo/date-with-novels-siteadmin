@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card"
 import TimeAndCalendar from "@/components/siteadmin/Navbar/TimeAndCalendar"
 import ViewTransitionWrapper from "@/components/reusable/ViewTransitionWrapper"
 
-export default async function AppLayout({
+export default async function DashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode
@@ -43,7 +43,7 @@ export default async function AppLayout({
                     </div>
                 </header>
                 {/* Main Content Area */}
-                <Card className="h-full p-4 min-h-[calc(100vh-4rem)] w-full z-1">
+                <Card className="h-full p-4 min-h-[calc(100vh-4rem)] w-full z-[1]">
                     <ViewTransitionWrapper>
                         {children}
                     </ViewTransitionWrapper>
