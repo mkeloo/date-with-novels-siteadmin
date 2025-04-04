@@ -22,6 +22,7 @@ import {
     Heart,
     Star,
     Percent,
+    Image
 } from "lucide-react"
 
 export const data = {
@@ -193,6 +194,17 @@ export const data = {
                     title: "Genres & Themes",
                     url: "/dashboard/product-settings/genres-themes",
                     icon: Book,
+                },
+            ],
+        },
+        {
+            title: "Manage Media",
+            url: "#",
+            items: [
+                {
+                    title: "Media Browser",
+                    url: "/dashboard/media/media-browser",
+                    icon: Image,
                 },
             ],
         },
