@@ -203,7 +203,7 @@ export const data = {
             items: [
                 {
                     title: "Media Browser",
-                    url: "/dashboard/media/media-browser",
+                    url: "/dashboard/manage-media/media-browser",
                     icon: Image,
                 },
             ],
