@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Upload, Eye, Trash2, ImageIcon, GripVertical } from 'lucide-react'
@@ -19,6 +19,8 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { DropzoneUploader } from '@/components/siteadmin/MediaBrowser/DropzoneUploader'
+import { getPackagesById } from '@/app/actions/siteadmin/packages'
 
 interface ImageItem {
     id: string
@@ -99,6 +101,9 @@ export default function PackageMediaForm({
 }) {
     const [images, setImages] = useState<ImageItem[]>(dummyImages)
     const [activeId, setActiveId] = useState<string | null>(null)
+    const [uploadOpen, setUploadOpen] = useState(false)
+    const [packageSlug, setPackageSlug] = useState<string | null>(null)
+
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -110,15 +115,45 @@ export default function PackageMediaForm({
 
     const activeImage = images.find((img) => img.id === activeId)
 
+    useEffect(() => {
+        if (!packageId) return
+
+        const fetchSlug = async () => {
+            try {
+                const pkg = await getPackagesById(Number(packageId))
+                setPackageSlug(`packages/${pkg.slug}`)
+            } catch (err) {
+                console.error("Failed to fetch package:", err)
+            }
+        }
+
+        fetchSlug()
+    }, [packageId])
+
     return (
         <Card className="w-full h-full p-4 gap-4 flex flex-col">
             <div className="flex justify-between items-center">
                 <h2 className="text-sm font-semibold">
                     {mode === 'create' ? 'Upload Media for New Package' : 'Manage Media for Package'}
                 </h2>
-                <Button size="sm" variant="outline">
-                    <Upload className="w-4 h-4 mr-1" /> Upload
-                </Button>
+                <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+                    <DialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                            <Upload className="w-4 h-4 mr-1" /> Upload
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                        <DialogTitle>Upload Media</DialogTitle>
+                        <DropzoneUploader onSubmit={async (formData) => {
+                            console.log('submit', formData);
+                            return Promise.resolve();
+                        }}
+                            maxFiles={10}
+                            packageId={packageId ?? ''}
+                            packageSlug={packageSlug ?? 'loading...'}
+                        />
+                    </DialogContent>
+                </Dialog>
             </div>
 
             <Card className="flex-1 border rounded-md p-4">
