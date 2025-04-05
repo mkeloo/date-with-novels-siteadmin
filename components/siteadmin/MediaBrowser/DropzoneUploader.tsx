@@ -13,9 +13,10 @@ export type DropzoneUploaderProps = {
     maxFiles?: number
     maxFileSizeMB?: number
     packageId: string
+    packageSlug?: string
 }
 
-export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, packageId }: DropzoneUploaderProps) {
+export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, packageId, packageSlug }: DropzoneUploaderProps) {
     const [files, setFiles] = useState<{ file: File; alt: string }[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
@@ -91,6 +92,16 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
             <Label className="text-sm font-semibold">
                 Upload up to {maxFiles} images (max {maxFileSizeMB}MB each)
             </Label>
+
+            {/* Folder path visual feedback */}
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Upload folder path</Label>
+                <Input
+                    readOnly
+                    value={`${packageSlug}`}
+                    className="text-muted-foreground bg-muted cursor-not-allowed"
+                />
+            </div>
 
             <div
                 onDrop={handleDrop}
