@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -8,6 +8,7 @@ import { Folder, FolderOpen, ImageIcon, Eye, Trash2, Upload, ArrowLeft, FolderTr
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
 import { motion, AnimatePresence } from 'framer-motion'
+import { getAllFolders, createFolder, FolderType } from '@/app/actions/siteadmin/folders'
 
 import {
     DndContext,
@@ -24,6 +25,9 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { DialogDescription } from '@radix-ui/react-dialog'
+import { Select, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
+import { SelectTrigger } from '@radix-ui/react-select'
 
 const folders = [
     { id: '1', name: 'packages', slug: 'packages', parent_id: null },
@@ -112,6 +116,64 @@ export default function MediaBrowserPage() {
     const [uploadsState, setUploadsState] = useState(uploads)
     const [activeUploadId, setActiveUploadId] = useState<string | null>(null)
 
+    // State for the Create Folder dialog
+    const [allFolders, setAllFolders] = useState<FolderType[]>([]);
+    const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false);
+    const [folderName, setFolderName] = useState("");
+    const [parentFolderId, setParentFolderId] = useState<string | null>(null);
+
+    // Fetch all folders (for the Parent Folder dropdown)
+    useEffect(() => {
+        async function fetchFolders() {
+            try {
+                const data = await getAllFolders();
+                setAllFolders(data);
+            } catch (err) {
+                console.error("Failed to fetch all folders:", err);
+            }
+        }
+        fetchFolders();
+    }, []);
+
+    // Handler to create a folder
+    const handleCreateFolder = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        // Default values
+        let derivedParentType = "packages";
+        let derivedSlug = folderName;
+        let derivedName = folderName;
+
+        // If a parent folder is selected, build the slug based on the parent's slug.
+        if (parentFolderId) {
+            const parentFolder = allFolders.find((f) => f.id === parentFolderId);
+            if (!parentFolder) {
+                console.error("Parent folder not found.");
+                return;
+            }
+            derivedParentType = parentFolder.parent_type;
+            // Remove any leading slash from parent's slug
+            const parentSlugNormalized = parentFolder.slug.replace(/^\/+/, "");
+            derivedSlug = parentSlugNormalized
+                ? `${parentSlugNormalized}/${folderName}`
+                : folderName;
+            derivedName = folderName;
+        }
+
+        try {
+            await createFolder({
+                name: derivedName,
+                slug: derivedSlug,
+                parentType: derivedParentType,
+            });
+            // Optionally, refetch folders here if needed
+            setCreateFolderDialogOpen(false);
+            setFolderName("");
+            setParentFolderId(null);
+        } catch (err: any) {
+            console.error("Failed to create folder:", err);
+        }
+    };
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -125,8 +187,8 @@ export default function MediaBrowserPage() {
         setSelectedFolder(slug)
     }
 
-    const selectedFolderObj = folders.find(f => f.slug === selectedFolder)
-    const childFolders = folders.filter(
+    const selectedFolderObj = allFolders.find(f => f.slug === selectedFolder)
+    const childFolders = allFolders.filter(
         f => f.parent_id === selectedFolderObj?.id || (!selectedFolder && f.parent_id === null)
     )
 
@@ -140,15 +202,15 @@ export default function MediaBrowserPage() {
         let current = selectedFolderObj
         while (current) {
             trail.unshift(current.name)
-            current = folders.find(f => f.id === current?.parent_id)
+            current = allFolders.find((f) => f.id === current?.parent_id)
         }
         return trail
     }
 
     // For the folder slide animation
     const direction = (() => {
-        const prevIndex = folders.findIndex(f => f.slug === previousFolder)
-        const currIndex = folders.findIndex(f => f.slug === selectedFolder)
+        const prevIndex = allFolders.findIndex(f => f.slug === previousFolder)
+        const currIndex = allFolders.findIndex(f => f.slug === selectedFolder)
         return currIndex > prevIndex ? 'left' : 'right'
     })()
 
@@ -158,6 +220,8 @@ export default function MediaBrowserPage() {
     return (
         <div className="flex w-full h-full min-h-[85vh] gap-4 p-4">
             <div className="w-1/4 border rounded-md p-4 flex flex-col justify-between overflow-hidden">
+
+                {/* Folders Management */}
                 <div>
                     <h2 className="text-sm font-semibold mb-4">Folders</h2>
 
@@ -172,13 +236,13 @@ export default function MediaBrowserPage() {
                         <div
                             className="w-full mb-2 text-left text-sm px-2 py-2 rounded-md bg-muted text-muted-foreground font-medium cursor-pointer flex"
                             onClick={() => {
-                                const parent = folders.find(f => f.id === selectedFolderObj.parent_id)
+                                const parent = allFolders.find((f) => f.id === selectedFolderObj.parent_id)
                                 setPreviousFolder(selectedFolder)
                                 setSelectedFolder(parent?.slug || null)
                             }}
                         >
                             <ArrowLeft className="w-5 h-5 mr-2" />
-                            Back to {folders.find(f => f.id === selectedFolderObj.parent_id)?.name || 'Root'}
+                            Back to {allFolders.find((f) => f.id === selectedFolderObj.parent_id)?.name || 'Root'}
                         </div>
                     )}
 
@@ -190,7 +254,7 @@ export default function MediaBrowserPage() {
                             exit={{ x: direction === 'left' ? -40 : 40, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                         >
-                            {childFolders.map(folder => {
+                            {childFolders.map((folder) => {
                                 const isActive = selectedFolder === folder.slug
                                 const Icon = isActive ? FolderOpen : Folder
                                 return (
@@ -213,7 +277,68 @@ export default function MediaBrowserPage() {
                 {/* Folder trail */}
                 <div className="mt-4 border-t pt-3 text-xs text-muted-foreground">
                     <span className="font-semibold block mb-1">Current Path</span>
-                    <div className="text-xs text-muted-foreground">/{getPathTrail().join(' / ')}</div>
+                    <div className="text-xs text-muted-foreground">/{getPathTrail().join(" / ")}</div>
+                </div>
+
+                {/* Create Folder Dialog */}
+                <div className="mt-4">
+                    <Dialog open={createFolderDialogOpen} onOpenChange={setCreateFolderDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button disableLoader size="sm" variant="outline">
+                                <FolderOpen className="w-4 h-4 mr-1" /> Create Folder
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-sm">
+                            <DialogTitle>Create New Folder</DialogTitle>
+                            <form onSubmit={handleCreateFolder}>
+                                {/* Folder Name */}
+                                <div className="mb-4">
+                                    <label htmlFor="folderName" className="block text-sm font-medium text-muted-foreground">
+                                        Folder Name
+                                    </label>
+                                    <input
+                                        id="folderName"
+                                        type="text"
+                                        value={folderName}
+                                        onChange={(e) => setFolderName(e.target.value)}
+                                        className="mt-1 block w-full border rounded-md p-2"
+                                        required
+                                    />
+                                </div>
+                                {/* Parent Folder Dropdown */}
+                                <div className="mb-4">
+                                    <label htmlFor="parentFolder" className="block text-sm font-medium text-muted-foreground">
+                                        Parent Folder
+                                    </label>
+                                    <select
+                                        id="parentFolder"
+                                        value={parentFolderId || "none"}
+                                        onChange={(e) => setParentFolderId(e.target.value === "none" ? null : e.target.value)}
+                                        className="mt-1 block w-full border rounded-md p-2"
+                                    >
+                                        <option value="none">None</option>
+                                        {allFolders.map((folder) => (
+                                            <option key={folder.id} value={folder.id}>
+                                                {folder.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        If “None” is selected, this folder will be a root folder.
+                                    </p>
+                                </div>
+                                {/* Form Actions */}
+                                <div className="flex justify-end gap-2">
+                                    <Button type="button" variant="ghost" onClick={() => setCreateFolderDialogOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" variant="default">
+                                        Create
+                                    </Button>
+                                </div>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 
@@ -276,6 +401,8 @@ export default function MediaBrowserPage() {
                     </p>
                 )}
             </ScrollArea>
+
+
         </div>
     )
 }
