@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server"
 
+
 export async function uploadPackageMediaFiles(formData: FormData) {
     const supabase = await createClient()
 
@@ -136,4 +137,72 @@ export async function uploadPackageMediaFiles(formData: FormData) {
 
     // console.log("Upload successful.")
     return "Upload successful"
+}
+
+
+export async function getPackageMediaFiles(packageId: number) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("uploads")
+        .select("id, alt_text, file_path")
+        .eq("ref_type", "package")
+        .eq("ref_id", packageId)
+        .order("sort_order", { ascending: true })
+
+    if (error) {
+        throw new Error(`Failed to fetch uploads: ${error.message}`)
+    }
+
+    const images = data.map((item) => ({
+        id: item.id,
+        alt: item.alt_text,
+        src: supabase.storage.from("date-with-novels").getPublicUrl(item.file_path).data.publicUrl,
+    }))
+
+    return images
+}
+
+
+
+export async function deletePackageMediaFile(uploadId: string) {
+    const supabase = await createClient()
+
+    // Get the file path from the uploads table
+    const { data, error: fetchError } = await supabase
+        .from("uploads")
+        .select("file_path")
+        .eq("id", uploadId)
+        .single()
+
+    if (fetchError || !data) {
+        console.error("Failed to fetch file path for deletion:", fetchError)
+        throw new Error("File not found or could not retrieve path.")
+    }
+
+    const filePath = data.file_path
+
+    // Delete file from storage
+    const { error: storageError } = await supabase
+        .storage
+        .from("date-with-novels")
+        .remove([filePath])
+
+    if (storageError) {
+        console.error("Failed to delete from storage:", storageError)
+        throw new Error(`Failed to delete file from storage: ${storageError.message}`)
+    }
+
+    // Delete metadata from uploads table
+    const { error: deleteError } = await supabase
+        .from("uploads")
+        .delete()
+        .eq("id", uploadId)
+
+    if (deleteError) {
+        console.error("Failed to delete from uploads table:", deleteError)
+        throw new Error(`Failed to delete file metadata: ${deleteError.message}`)
+    }
+
+    return "File deleted successfully"
 }

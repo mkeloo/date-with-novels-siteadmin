@@ -74,15 +74,18 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
         })
 
         try {
-            for (let i = 0; i < files.length; i++) {
-                const formData = new FormData()
-                formData.append("files", files[i].file)
-                formData.append(`alt-0`, files[i].alt)
-                formData.append("ref_type", "package")
-                formData.append("ref_id", packageId)
-                if (packageSlug) formData.append("package_slug", packageSlug)
+            // Build a single FormData with all files and alt texts.
+            const formData = new FormData()
+            files.forEach((fileObj, idx) => {
+                formData.append("files", fileObj.file)
+                formData.append(`alt-${idx}`, fileObj.alt)
+            })
+            formData.append("ref_type", "package")
+            formData.append("ref_id", packageId)
+            if (packageSlug) formData.append("package_slug", packageSlug)
 
-                await onSubmit(formData)
+            // Simulate per-file progress updates.
+            for (let i = 0; i < files.length; i++) {
                 const progress = Math.round(((i + 1) / files.length) * 100)
                 setUploadProgress(progress)
 
@@ -90,11 +93,12 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
                     id: "upload-progress"
                 })
 
-                // Wait briefly after the last file, so the UI can reflect 100%
-                if (i + 1 === files.length) {
-                    await new Promise((resolve) => setTimeout(resolve, 500)) // 500ms delay
-                }
+                // Simulated delay per file for UI feedback.
+                await new Promise((resolve) => setTimeout(resolve, 150))
             }
+
+            // Perform one single upload of all files.
+            await onSubmit(formData)
 
             toast.success("Upload complete", {
                 id: "upload-progress"
