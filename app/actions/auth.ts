@@ -25,6 +25,9 @@ export async function signIn(
         password,
     });
 
+    const session = await supabase.auth.getSession();
+    console.log("Refresh Token:", session.data?.session?.refresh_token);
+
     console.log(data, "data_login");
 
     if (error) {
