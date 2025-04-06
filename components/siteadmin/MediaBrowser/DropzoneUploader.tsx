@@ -20,6 +20,7 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
     const [files, setFiles] = useState<{ file: File; alt: string }[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null)
 
     function handleDrop(e: React.DragEvent<HTMLDivElement>) {
         e.preventDefault()
@@ -65,25 +66,49 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
         e.preventDefault()
         if (files.length === 0) return toast.error("No files selected")
 
-        const formData = new FormData()
-        files.forEach(({ file, alt }, i) => {
-            formData.append("files", file)
-            formData.append(`alt-${i}`, alt)
+        setIsUploading(true)
+        setUploadProgress(0)
+
+        toast.loading("Uploading files...", {
+            id: "upload-progress"
         })
-        formData.append("ref_type", "package")
-        formData.append("ref_id", packageId)
 
         try {
-            setIsUploading(true)
-            await onSubmit(formData)
-            toast.success("Uploaded successfully")
+            for (let i = 0; i < files.length; i++) {
+                const formData = new FormData()
+                formData.append("files", files[i].file)
+                formData.append(`alt-0`, files[i].alt)
+                formData.append("ref_type", "package")
+                formData.append("ref_id", packageId)
+                if (packageSlug) formData.append("package_slug", packageSlug)
+
+                await onSubmit(formData)
+                const progress = Math.round(((i + 1) / files.length) * 100)
+                setUploadProgress(progress)
+
+                toast.loading(`Uploading ${i + 1} / ${files.length} files...`, {
+                    id: "upload-progress"
+                })
+
+                // Wait briefly after the last file, so the UI can reflect 100%
+                if (i + 1 === files.length) {
+                    await new Promise((resolve) => setTimeout(resolve, 500)) // 500ms delay
+                }
+            }
+
+            toast.success("Upload complete", {
+                id: "upload-progress"
+            })
+
             setFiles([])
         } catch (err: any) {
             toast.error("Upload failed", {
-                description: err.message,
+                id: "upload-progress",
+                description: err.message
             })
         } finally {
             setIsUploading(false)
+            setUploadProgress(null)
         }
     }
 
@@ -130,7 +155,13 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
                     />
                     <Button
                         type="button"
-                        onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+                        onClick={() => {
+                            const input = document.querySelector<HTMLInputElement>('input[type="file"]')
+                            if (input) {
+                                input.value = ""
+                                input.click()
+                            }
+                        }}
                         size="sm"
                         className="mt-2"
                     >
@@ -174,8 +205,28 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
                 ))}
             </div>
 
-            <Button type="submit" disabled={isUploading} className="w-full">
-                {isUploading ? "Uploading..." : "Upload"}
+            <Button
+                type="submit"
+                disabled={isUploading}
+                className={cn(
+                    "w-full relative overflow-hidden text-background transition-all",
+                    isUploading && "bg-muted text-foreground"
+                )}
+            >
+                {/* Background fill */}
+                {isUploading && uploadProgress !== null && (
+                    <span
+                        className="absolute inset-0 bg-primary z-0 transition-all duration-200 ease-linear"
+                        style={{ width: `${uploadProgress}%` }}
+                    />
+                )}
+
+                {/* Button text stays on top */}
+                <span className="relative z-10">
+                    {isUploading
+                        ? `Uploading ${uploadProgress}%`
+                        : "Upload"}
+                </span>
             </Button>
         </form>
     )

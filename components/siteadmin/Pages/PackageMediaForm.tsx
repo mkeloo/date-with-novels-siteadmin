@@ -21,6 +21,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { DropzoneUploader } from '@/components/siteadmin/MediaBrowser/DropzoneUploader'
 import { getPackagesById } from '@/app/actions/siteadmin/packages'
+import { uploadPackageMediaFiles } from "@/app/actions/siteadmin/image_uploader"
+
 
 interface ImageItem {
     id: string
@@ -144,10 +146,15 @@ export default function PackageMediaForm({
                     </DialogTrigger>
                     <DialogContent className="max-w-lg">
                         <DialogTitle>Upload Media</DialogTitle>
-                        <DropzoneUploader onSubmit={async (formData) => {
-                            console.log('submit', formData);
-                            return Promise.resolve();
-                        }}
+                        <DropzoneUploader
+                            onSubmit={async (formData) => {
+                                if (packageSlug) {
+                                    formData.append("package_slug", packageSlug) // You must have this available in this file
+                                } else {
+                                    console.error("Package slug is null and cannot be appended to formData.")
+                                }
+                                await uploadPackageMediaFiles(formData)
+                            }}
                             maxFiles={10}
                             packageId={packageId ?? ''}
                             packageSlug={packageSlug ?? 'loading...'}

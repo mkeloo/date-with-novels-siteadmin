@@ -1,72 +1,139 @@
-"use server";
+"use server"
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server"
 
-export async function uploadStoreImage(formData: FormData) {
-    // Retrieve fields from the form data
-    const file = formData.get("file") as File | null;
-    const imageAlt = formData.get("imageAlt") as string;
-    let sortOrder = formData.get("sortOrder") as string;
+export async function uploadPackageMediaFiles(formData: FormData) {
+    const supabase = await createClient()
 
-    if (!file) {
-        throw new Error("No file provided");
+    const refType = formData.get("ref_type") as string
+    const refId = formData.get("ref_id") as string
+    const packageSlug = formData.get("package_slug") as string
+
+    if (!refType || !refId || !packageSlug) {
+        throw new Error("Missing required metadata (ref_type, ref_id, package_slug)")
     }
 
-    // Use your existing createClient to instantiate the Supabase client
-    const supabase = await createClient();
+    const files = formData.getAll("files") as File[]
+    const altTexts = files.map((_, idx) => formData.get(`alt-${idx}`) as string)
 
-    // Get the site_url's id from inhale_bay_website_settings (this simulates using a subquery)
-    const { data: settingData, error: settingError } = await supabase
-        .from("inhale_bay_website_settings")
+    // const bucket = "date-with-novels"
+    // console.log("📦 Uploading to bucket:", bucket)
+
+    const cleanedSlug = packageSlug.replace(/^packages\//, "")
+    const basePath = `/packages/${cleanedSlug}`
+
+    // Check if the parent folder exists
+    let parentFolderId: string | null = null
+
+    const { data: existingParent, error: parentFetchError } = await supabase
+        .from("folders")
         .select("id")
-        .eq("option_name", "site_url")
-        .single();
+        .eq("slug", "packages")
+        .single()
 
-    if (settingError) {
-        throw settingError;
-    }
+    if (parentFetchError && parentFetchError.code === "PGRST116") {
+        // If not found, insert it
+        const { data: newParent, error: parentInsertError } = await supabase
+            .from("folders")
+            .insert({
+                name: "packages",
+                slug: "packages",
+                parent_type: "packages",
+            })
+            .select("id")
+            .single()
 
-    const siteUrlId = settingData.id;
-
-    // If sortOrder is empty, automatically assign the next sort value
-    if (!sortOrder || sortOrder.trim() === "") {
-        const { data: sortData, error: sortError } = await supabase
-            .from("website_store_images")
-            .select("sort")
-            .order("sort", { ascending: false })
-            .limit(1);
-
-        if (sortError) {
-            throw sortError;
+        if (parentInsertError || !newParent) {
+            console.error("Failed to create 'packages' root folder:", parentInsertError)
+            throw new Error("Failed to create root 'packages' folder.")
         }
-        sortOrder = sortData && sortData.length > 0 ? String(Number(sortData[0].sort) + 1) : "1";
+
+        parentFolderId = newParent.id
+    } else if (existingParent) {
+        parentFolderId = existingParent.id
+    } else {
+        console.error("Failed to fetch 'packages' folder:", parentFetchError)
+        throw new Error("Unexpected error fetching 'packages' folder.")
     }
 
-    // Create a unique file path for storage
-    const filePath = `/store-gallery-images/${Date.now()}-${file.name}`;
+    // console.log("📁 Parent Folder ID:", parentFolder.id)
 
-    // Upload the file to the bucket "inhale-bay-website"
-    const { error: uploadError } = await supabase.storage
-        .from("inhale-bay-website")
-        .upload(filePath, file);
-
-    if (uploadError) {
-        throw uploadError;
+    // Folder Upsert Payload
+    const folderPayload = {
+        name: packageSlug,
+        slug: basePath,
+        parent_type: "packages",
+        parent_id: parentFolderId,
     }
 
-    // Insert a record into website_store_images table with the retrieved site_url id
-    const { error: insertError } = await supabase
-        .from("website_store_images")
-        .insert({
-            sort: Number(sortOrder),
-            image_src: filePath, // only store the relative path
-            image_alt: imageAlt,
-            option_name: siteUrlId,
-        });
+    // console.log("Folder Upsert Payload:", folderPayload)
 
-    if (insertError) {
-        throw insertError;
+    const { error: folderError } = await supabase
+        .from("folders")
+        .upsert(folderPayload, { onConflict: "slug" })
+
+    if (folderError) {
+        console.error("Folder upsert error:", folderError)
+        throw new Error(`Failed to create folder entry: ${folderError.message}`)
     }
 
-    return "Image uploaded successfully!";
+    // Fetch current max sort_order
+    const { data: maxSortRow, error: sortError } = await supabase
+        .from("uploads")
+        .select("sort_order")
+        .eq("ref_type", refType)
+        .eq("ref_id", refId)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .single()
+
+    const currentMaxSort = maxSortRow?.sort_order || 0
+
+
+    // Process each file one by one
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const alt = altTexts[i] || file.name
+        const fileName = `${Date.now()}-${file.name}`
+        const filePath = `${basePath}/${fileName}`
+        const fileSizeMB = (file.size / (1000 * 1000)).toFixed(2)
+
+        // console.log(`📄 Uploading file ${i + 1}:`, file.name)
+        // console.log(`📏 File size: ${fileSizeMB} MB`)
+        // console.log(`📂 File path: ${filePath}`)
+        // console.log(file)
+
+        // Upload file to storage
+        const { error: uploadError } = await supabase.storage
+            .from("date-with-novels")
+            .upload(filePath, file)
+
+        if (uploadError) {
+            console.error(`Upload failed for ${file.name}:`, uploadError)
+            throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`)
+        }
+
+        // Prepare metadata for the file
+        const metadata = {
+            file_path: filePath,
+            file_size_mb: Number(fileSizeMB),
+            alt_text: alt,
+            ref_type: refType,
+            ref_id: refId,
+            sort_order: currentMaxSort + i + 1,
+        }
+
+        // console.log(`📄 Inserting Metadata for file ${i + 1}:`, metadata)
+
+        // Insert metadata for the current file
+        const { error: insertError } = await supabase.from("uploads").insert(metadata)
+
+        if (insertError) {
+            console.error("Uploads insert error:", insertError)
+            throw new Error(`Failed to insert uploads metadata for file ${file.name}: ${insertError.message}`)
+        }
+    }
+
+    // console.log("Upload successful.")
+    return "Upload successful"
 }

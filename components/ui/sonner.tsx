@@ -1,6 +1,5 @@
 "use client"
 
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
@@ -10,6 +9,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       style={
         {
+          "--loading-bg": "var(--toast-loading-bg)",
+          "--loading-text": "var(--toast-loading-text)",
+          "--loading-border": "var(--toast-loading-border)",
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",

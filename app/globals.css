@@ -72,6 +72,10 @@
     --toast-info-text: #004f9f;
     --toast-info-border: #6cbfff;
 
+    --toast-loading-bg: #6cbfff;
+    --toast-loading-text: #004f9f;
+    --toast-loading-border: #6cbfff;
+
   }
 
   .dark {
