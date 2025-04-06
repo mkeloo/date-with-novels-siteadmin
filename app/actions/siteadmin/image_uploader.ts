@@ -163,8 +163,6 @@ export async function getPackageMediaFiles(packageId: number) {
     return images
 }
 
-
-
 export async function deletePackageMediaFile(uploadId: string) {
     const supabase = await createClient()
 
@@ -181,12 +179,14 @@ export async function deletePackageMediaFile(uploadId: string) {
     }
 
     const filePath = data.file_path
+    // Remove leading slash if present
+    const normalizedFilePath = filePath.replace(/^\//, "")
 
     // Delete file from storage
     const { error: storageError } = await supabase
         .storage
         .from("date-with-novels")
-        .remove([filePath])
+        .remove([normalizedFilePath])
 
     if (storageError) {
         console.error("Failed to delete from storage:", storageError)
