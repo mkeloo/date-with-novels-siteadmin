@@ -84,18 +84,18 @@ export async function updateSession(request: NextRequest) {
         error,
     } = await supabase.auth.getUser()
 
-    // Detect refresh_token_not_found error and force logout
-    if (!user && error?.message?.toLowerCase().includes("refresh token not found")) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
+    // // Detect refresh_token_not_found error and force logout
+    // if (!user && error?.message?.toLowerCase().includes("refresh token not found")) {
+    //     const url = request.nextUrl.clone()
+    //     url.pathname = '/login'
 
-        const response = NextResponse.redirect(url)
-        response.cookies.delete('sb-refresh-token')
-        response.cookies.delete('sb-access-token')
-        response.headers.set('Cache-Control', 'no-store')
+    //     const response = NextResponse.redirect(url)
+    //     response.cookies.delete('sb-refresh-token')
+    //     response.cookies.delete('sb-access-token')
+    //     response.headers.set('Cache-Control', 'no-store')
 
-        return response
-    }
+    //     return response
+    // }
 
     // If user is logged in and is trying to access the login page, redirect them to /dashboard.
     if (request.nextUrl.pathname.startsWith("/login") && user) {
