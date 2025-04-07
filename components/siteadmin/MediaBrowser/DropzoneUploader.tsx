@@ -101,7 +101,8 @@ export function DropzoneUploader({ onSubmit, maxFiles = 10, maxFileSizeMB = 5, p
             await onSubmit(formData)
 
             toast.success("Upload complete", {
-                id: "upload-progress"
+                id: "upload-progress",
+                description: "All files have been uploaded successfully."
             })
 
             setFiles([])
