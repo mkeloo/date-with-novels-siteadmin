@@ -197,17 +197,17 @@ export const data = {
                 },
             ],
         },
-        {
-            title: "Manage Media",
-            url: "#",
-            items: [
-                {
-                    title: "Media Browser",
-                    url: "/dashboard/manage-media/media-browser",
-                    icon: Image,
-                },
-            ],
-        },
+        // {
+        //     title: "Manage Media",
+        //     url: "#",
+        //     items: [
+        //         {
+        //             title: "Media Browser",
+        //             url: "/dashboard/manage-media/media-browser",
+        //             icon: Image,
+        //         },
+        //     ],
+        // },
         {
             title: "Promotions & Testimonials",
             url: "#",
