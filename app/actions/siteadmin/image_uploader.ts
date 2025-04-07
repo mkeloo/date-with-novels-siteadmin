@@ -17,28 +17,26 @@ export async function uploadPackageMediaFiles(formData: FormData) {
     const files = formData.getAll("files") as File[]
     const altTexts = files.map((_, idx) => formData.get(`alt-${idx}`) as string)
 
-    // const bucket = "date-with-novels"
-    // console.log("📦 Uploading to bucket:", bucket)
-
+    // Remove any leading "packages/" from packageSlug so we work only with the sub-path
     const cleanedSlug = packageSlug.replace(/^packages\//, "")
-    const basePath = `/packages/${cleanedSlug}`
+    // Create an array of folder segments
+    const folderSegments = cleanedSlug.split('/')
 
-    // Check if the parent folder exists
+    // Ensure the root folder "packages" exists
     let parentFolderId: string | null = null
-
+    const rootSlug = "packages"
     const { data: existingParent, error: parentFetchError } = await supabase
         .from("folders")
         .select("id")
-        .eq("slug", "packages")
+        .eq("slug", rootSlug)
         .single()
 
     if (parentFetchError && parentFetchError.code === "PGRST116") {
-        // If not found, insert it
         const { data: newParent, error: parentInsertError } = await supabase
             .from("folders")
             .insert({
                 name: "packages",
-                slug: "packages",
+                slug: rootSlug,
                 parent_type: "packages",
             })
             .select("id")
@@ -48,7 +46,6 @@ export async function uploadPackageMediaFiles(formData: FormData) {
             console.error("Failed to create 'packages' root folder:", parentInsertError)
             throw new Error("Failed to create root 'packages' folder.")
         }
-
         parentFolderId = newParent.id
     } else if (existingParent) {
         parentFolderId = existingParent.id
@@ -57,28 +54,51 @@ export async function uploadPackageMediaFiles(formData: FormData) {
         throw new Error("Unexpected error fetching 'packages' folder.")
     }
 
-    // console.log("📁 Parent Folder ID:", parentFolder.id)
+    // Iterate over each folder segment to build the nested structure
+    let currentSlug = rootSlug
+    for (const segment of folderSegments) {
+        currentSlug += `/${segment}`
 
-    // Folder Upsert Payload
-    const folderPayload = {
-        name: packageSlug,
-        slug: basePath,
-        parent_type: "packages",
-        parent_id: parentFolderId,
+        // Check if the folder for the current segment exists
+        const { data: existingFolder, error: folderFetchError } = await supabase
+            .from("folders")
+            .select("id")
+            .eq("slug", currentSlug)
+            .single()
+
+        if (folderFetchError && folderFetchError.code === "PGRST116") {
+            // Not found, so insert this folder
+            const { data: newFolder, error: folderInsertError } = await supabase
+                .from("folders")
+                .insert({
+                    name: segment,
+                    slug: currentSlug,
+                    parent_type: "packages",
+                    parent_id: parentFolderId,
+                })
+                .select("id")
+                .single()
+
+            if (folderInsertError || !newFolder) {
+                console.error(`Failed to create folder '${segment}':`, folderInsertError)
+                throw new Error(`Failed to create folder '${segment}'.`)
+            }
+            // Update the parentFolderId for the next level
+            parentFolderId = newFolder.id
+        } else if (existingFolder) {
+            // Folder exists – update parentFolderId to its id for next level
+            parentFolderId = existingFolder.id
+        } else {
+            console.error(`Unexpected error fetching folder '${segment}':`, folderFetchError)
+            throw new Error(`Error fetching folder '${segment}'.`)
+        }
     }
 
-    // console.log("Folder Upsert Payload:", folderPayload)
+    // Use the final currentSlug as the base path for file uploads.
+    // currentSlug is now something like "packages/classic-edition"
+    const basePath = currentSlug
 
-    const { error: folderError } = await supabase
-        .from("folders")
-        .upsert(folderPayload, { onConflict: "slug" })
-
-    if (folderError) {
-        console.error("Folder upsert error:", folderError)
-        throw new Error(`Failed to create folder entry: ${folderError.message}`)
-    }
-
-    // Fetch current max sort_order
+    // Fetch current max sort_order from the uploads table
     const { data: maxSortRow, error: sortError } = await supabase
         .from("uploads")
         .select("sort_order")
@@ -90,7 +110,6 @@ export async function uploadPackageMediaFiles(formData: FormData) {
 
     const currentMaxSort = maxSortRow?.sort_order || 0
 
-
     // Process each file one by one
     for (let i = 0; i < files.length; i++) {
         const file = files[i]
@@ -98,11 +117,6 @@ export async function uploadPackageMediaFiles(formData: FormData) {
         const fileName = `${Date.now()}-${file.name}`
         const filePath = `${basePath}/${fileName}`
         const fileSizeMB = (file.size / (1000 * 1000)).toFixed(2)
-
-        // console.log(`📄 Uploading file ${i + 1}:`, file.name)
-        // console.log(`📏 File size: ${fileSizeMB} MB`)
-        // console.log(`📂 File path: ${filePath}`)
-        // console.log(file)
 
         // Upload file to storage
         const { error: uploadError } = await supabase.storage
@@ -124,8 +138,6 @@ export async function uploadPackageMediaFiles(formData: FormData) {
             sort_order: currentMaxSort + i + 1,
         }
 
-        // console.log(`📄 Inserting Metadata for file ${i + 1}:`, metadata)
-
         // Insert metadata for the current file
         const { error: insertError } = await supabase.from("uploads").insert(metadata)
 
@@ -135,11 +147,12 @@ export async function uploadPackageMediaFiles(formData: FormData) {
         }
     }
 
-    // console.log("Upload successful.")
     return "Upload successful"
 }
 
 
+
+// Fetch package media files
 export async function getPackageMediaFiles(packageId: number) {
     const supabase = await createClient()
 
@@ -163,6 +176,8 @@ export async function getPackageMediaFiles(packageId: number) {
     return images
 }
 
+
+// Delete package media file
 export async function deletePackageMediaFile(uploadId: string) {
     const supabase = await createClient()
 
