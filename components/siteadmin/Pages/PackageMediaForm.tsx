@@ -183,8 +183,8 @@ export default function PackageMediaForm({
                 >
                     {isLoading ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                            {Array.from({ length: 8 }).map((_, index) => (
-                                <div key={index} className="h-32 bg-gray-300 animate-pulse rounded" />
+                            {Array.from({ length: 12 }).map((_, index) => (
+                                <div key={index} className="h-36 bg-muted-foreground/30 animate-pulse rounded-xl" />
                             ))}
                         </div>
                     ) : (
