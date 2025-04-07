@@ -25,20 +25,6 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { DialogDescription } from '@radix-ui/react-dialog'
-import { Select, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
-import { SelectTrigger } from '@radix-ui/react-select'
-
-const folders = [
-    { id: '1', name: 'packages', slug: 'packages', parent_id: null },
-    { id: '2', name: 'romantic-escape', slug: 'packages/romantic-escape', parent_id: '1' },
-    { id: '3', name: 'gallery', slug: 'packages/romantic-escape/gallery', parent_id: '2' },
-    { id: '4', name: 'dark-fantasy', slug: 'packages/dark-fantasy', parent_id: '1' },
-    { id: '5', name: 'themes', slug: 'themes', parent_id: null },
-    { id: '6', name: 'cozy-romance', slug: 'themes/cozy-romance', parent_id: '5' },
-    { id: '7', name: 'gallery', slug: 'themes/cozy-romance/gallery', parent_id: '6' },
-    { id: '8', name: 'mystery-thriller', slug: 'packages/mystery-thriller', parent_id: '1' },
-]
 
 const uploads = [
     { id: 'u1', file_path: 'packages/romantic-escape/cover.jpg', alt_text: 'Cover for Romantic Escape' },
