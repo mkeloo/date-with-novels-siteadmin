@@ -62,13 +62,13 @@ export async function getPackageDescriptionByPackageId(package_id: number) {
         .eq("package_id", package_id)
         .single()
 
-    console.log("Package ID:", package_id)
-    console.log("Data:", data)
-    console.log("Error:", error)
+    // console.log("Package ID:", package_id)
+    // console.log("Data:", data)
+    // console.log("Error:", error)
 
     if (error) throw error;
     // Convert to plain object
-    console.log("Prototype before:", Object.getPrototypeOf(data))
+    // console.log("Prototype before:", Object.getPrototypeOf(data))
     return JSON.parse(JSON.stringify(data)) as PackageDescription;
 }
 
