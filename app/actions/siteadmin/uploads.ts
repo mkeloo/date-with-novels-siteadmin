@@ -3,6 +3,21 @@
 import { createClient } from "@/utils/supabase/server"
 
 
+// Get uploads by package ID or slug
+export async function getUploadsByPackageId(packageId: string) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("uploads")
+        .select("*")
+        .eq("ref_type", "package")
+        .eq("ref_id", packageId)
+        .order("sort_order", { ascending: true })
+
+    if (error) throw error
+    return data
+}
+
 // Get all uploads by ref_type + ref_id (e.g., a package or theme)
 export async function getUploadsByRef({
     refType,

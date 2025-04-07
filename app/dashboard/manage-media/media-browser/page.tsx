@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
 import { motion, AnimatePresence } from 'framer-motion'
 import { getAllFolders, createFolder, FolderType } from '@/app/actions/siteadmin/folders'
-
 import {
     DndContext,
     closestCenter,
@@ -21,144 +20,60 @@ import {
 import {
     arrayMove,
     SortableContext,
-    useSortable,
     rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { getPackageMediaFiles, deletePackageMediaFile } from '@/app/actions/siteadmin/image_uploader'
+import SortableImage from '@/components/siteadmin/MediaBrowser/SortableImage'
 
-const uploads = [
-    { id: 'u1', file_path: 'packages/romantic-escape/cover.jpg', alt_text: 'Cover for Romantic Escape' },
-    { id: 'u2', file_path: 'packages/romantic-escape/gallery/gallery-1.jpg', alt_text: 'Gallery Image 1' },
-    { id: 'u3', file_path: 'packages/romantic-escape/gallery/gallery-2.jpg', alt_text: 'Gallery Image 2' },
-    { id: 'u4', file_path: 'packages/romantic-escape/gallery/gallery-3.jpg', alt_text: 'Gallery Image 3' },
-    { id: 'u5', file_path: 'packages/dark-fantasy/cover.jpg', alt_text: 'Cover for Dark Fantasy' },
-    { id: 'u6', file_path: 'packages/dark-fantasy/banner.jpg', alt_text: 'Banner Image' },
-    { id: 'u7', file_path: 'packages/dark-fantasy/gallery/gallery-1.jpg', alt_text: 'Gallery 1' },
-    { id: 'u8', file_path: 'packages/mystery-thriller/cover.jpg', alt_text: 'Mystery Thriller Cover' },
-    { id: 'u9', file_path: 'themes/cozy-romance/cover.jpg', alt_text: 'Cozy Romance Theme Cover' },
-    { id: 'u10', file_path: 'themes/cozy-romance/gallery/gallery-1.jpg', alt_text: 'Cozy Romance Gallery 1' },
-    { id: 'u11', file_path: 'themes/cozy-romance/gallery/gallery-2.jpg', alt_text: 'Cozy Romance Gallery 2' },
-    { id: 'u12', file_path: 'packages/romantic-escape/banner.jpg', alt_text: 'Romantic Escape Banner' },
-    { id: 'u13', file_path: 'packages/mystery-thriller/gallery-1.jpg', alt_text: 'Mystery Gallery Image' },
-    { id: 'u14', file_path: 'packages/mystery-thriller/gallery/gallery-2.jpg', alt_text: 'Mystery Gallery 2' },
-    { id: 'u15', file_path: 'packages/romantic-escape/gallery/gallery-4.jpg', alt_text: 'Gallery Image 4' },
-]
-
-// Sortable card for each file
-function SortableUpload({ file }: { file: { id: string; file_path: string; alt_text: string } }) {
-    const { active, isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: file.id })
-
-    const style: React.CSSProperties = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 50 : 'auto',
-    }
-
-    // Only hide the item being dragged (show it via DragOverlay)
-    if (active?.id === file.id) {
-        style.opacity = 0;
-    }
-
-
-    return (
-        <Card
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="p-4 flex flex-col gap-2 items-center justify-center relative group"
-        >
-            <GripVertical className="absolute left-2 top-2 w-4 h-4 text-muted-foreground" />
-            <ImageIcon className="w-8 h-8 text-muted-foreground" />
-            <p className="text-xs text-center line-clamp-2">{file.alt_text}</p>
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button disableLoader variant="ghost" size="icon" className="h-6 w-6">
-                            <Eye className="w-4 h-4" />
-                        </Button>
-                    </DialogTrigger>
-                    <VisuallyHidden.Root>
-                        <DialogTitle>Preview Image</DialogTitle>
-                    </VisuallyHidden.Root>
-                    <DialogContent className="max-w-sm">
-                        <p className="text-sm mb-2 font-semibold">{file.alt_text}</p>
-                        <div className="w-full aspect-video bg-gray-100 flex items-center justify-center">
-                            <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                        </div>
-                    </DialogContent>
-                </Dialog>
-                <Button disableLoader variant="destructive" size="icon" className="h-6 w-6">
-                    <Trash2 className="w-4 h-4" />
-                </Button>
-            </div>
-        </Card>
-    )
+export interface ImageItem {
+    id: string;
+    alt: string;
+    src: string;
+    file_path: string;
 }
 
-export default function MediaBrowserPage() {
+export default function MediaBrowserPage({ packageId }: { packageId: string | number }) {
     const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
     const [previousFolder, setPreviousFolder] = useState<string | null>(null)
-    const [uploadsState, setUploadsState] = useState(uploads)
+    const [uploadsState, setUploadsState] = useState<ImageItem[]>([])
     const [activeUploadId, setActiveUploadId] = useState<string | null>(null)
+    const [deleteMode, setDeleteMode] = useState(false)
+    const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
 
-    // State for the Create Folder dialog
-    const [allFolders, setAllFolders] = useState<FolderType[]>([]);
-    const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false);
-    const [folderName, setFolderName] = useState("");
-    const [parentFolderId, setParentFolderId] = useState<string | null>(null);
+    // Folders state & Create Folder dialog
+    const [allFolders, setAllFolders] = useState<FolderType[]>([])
+    const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false)
+    const [folderName, setFolderName] = useState("")
+    const [parentFolderId, setParentFolderId] = useState<string | null>(null)
 
-    // Fetch all folders (for the Parent Folder dropdown)
+    // Fetch all folders for folder tree
     useEffect(() => {
         async function fetchFolders() {
             try {
-                const data = await getAllFolders();
-                setAllFolders(data);
+                const data = await getAllFolders()
+                setAllFolders(data)
             } catch (err) {
-                console.error("Failed to fetch all folders:", err);
+                console.error("Failed to fetch all folders:", err)
             }
         }
-        fetchFolders();
-    }, []);
+        fetchFolders()
+    }, [])
 
-    // Handler to create a folder
-    const handleCreateFolder = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        // Default values
-        let derivedParentType = "packages";
-        let derivedSlug = folderName;
-        let derivedName = folderName;
-
-        // If a parent folder is selected, build the slug based on the parent's slug.
-        if (parentFolderId) {
-            const parentFolder = allFolders.find((f) => f.id === parentFolderId);
-            if (!parentFolder) {
-                console.error("Parent folder not found.");
-                return;
+    // Fetch package media files using your real function
+    useEffect(() => {
+        async function fetchMedia() {
+            try {
+                const media = await getPackageMediaFiles(Number(packageId))
+                setUploadsState(media)
+            } catch (err) {
+                console.error("Failed to fetch media:", err)
             }
-            derivedParentType = parentFolder.parent_type;
-            // Remove any leading slash from parent's slug
-            const parentSlugNormalized = parentFolder.slug.replace(/^\/+/, "");
-            derivedSlug = parentSlugNormalized
-                ? `${parentSlugNormalized}/${folderName}`
-                : folderName;
-            derivedName = folderName;
         }
-
-        try {
-            await createFolder({
-                name: derivedName,
-                slug: derivedSlug,
-                parentType: derivedParentType,
-            });
-            // Optionally, refetch folders here if needed
-            setCreateFolderDialogOpen(false);
-            setFolderName("");
-            setParentFolderId(null);
-        } catch (err: any) {
-            console.error("Failed to create folder:", err);
+        if (packageId) {
+            fetchMedia()
         }
-    };
+    }, [packageId])
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -174,15 +89,35 @@ export default function MediaBrowserPage() {
     }
 
     const selectedFolderObj = allFolders.find(f => f.slug === selectedFolder)
+
+    // Normalize selected folder (remove any leading slashes)
+    const normalizedFolder = selectedFolder ? selectedFolder.replace(/^\/+/, '') : '';
+
+    // Get child folders as usual
     const childFolders = allFolders.filter(
         f => f.parent_id === selectedFolderObj?.id || (!selectedFolder && f.parent_id === null)
-    )
+    );
 
-    // Only show uploads that start with the selected folder path
+    // Filter out the duplicate folder that is simply a leading slash version of the current folder
+    const filteredChildFolders = childFolders.filter(
+        folder => folder.slug !== `/${normalizedFolder}`
+    );
+
+    // Show images only if a folder is selected and filteredChildFolders is empty
     const visibleUploads =
-        uploadsState.filter(file => selectedFolder && file.file_path.startsWith(selectedFolder)) || []
+        normalizedFolder && filteredChildFolders.length === 0
+            ? uploadsState.filter(file =>
+                file.file_path.startsWith(normalizedFolder)
+            )
+            : [];
 
-    // For the folder breadcrumb
+    // Debug logs (remove after verifying)
+    useEffect(() => {
+        console.log("Selected Folder (normalized):", normalizedFolder);
+        uploadsState.forEach(file => console.log("File path:", file.file_path));
+    }, [normalizedFolder, uploadsState]);
+
+    // For folder breadcrumb trail
     const getPathTrail = () => {
         const trail = []
         let current = selectedFolderObj
@@ -193,31 +128,63 @@ export default function MediaBrowserPage() {
         return trail
     }
 
-    // For the folder slide animation
+    // For folder slide animation
     const direction = (() => {
         const prevIndex = allFolders.findIndex(f => f.slug === previousFolder)
         const currIndex = allFolders.findIndex(f => f.slug === selectedFolder)
         return currIndex > prevIndex ? 'left' : 'right'
     })()
 
-    // Used for the drag overlay
     const activeUpload = visibleUploads.find(file => file.id === activeUploadId)
+
+    // Handler to create a folder
+    const handleCreateFolder = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        let derivedParentType = "packages"
+        let derivedSlug = folderName
+        let derivedName = folderName
+
+        if (parentFolderId) {
+            const parentFolder = allFolders.find((f) => f.id === parentFolderId)
+            if (!parentFolder) {
+                console.error("Parent folder not found.")
+                return
+            }
+            derivedParentType = parentFolder.parent_type
+            const parentSlugNormalized = parentFolder.slug.replace(/^\/+/, "")
+            derivedSlug = parentSlugNormalized
+                ? `${parentSlugNormalized}/${folderName}`
+                : folderName
+            derivedName = folderName
+        }
+
+        try {
+            await createFolder({
+                name: derivedName,
+                slug: derivedSlug,
+                parentType: derivedParentType,
+            })
+            setCreateFolderDialogOpen(false)
+            setFolderName("")
+            setParentFolderId(null)
+        } catch (err: any) {
+            console.error("Failed to create folder:", err)
+        }
+    }
+
 
     return (
         <div className="flex w-full h-full min-h-[85vh] gap-4 p-4">
             <div className="w-1/4 border rounded-md p-4 flex flex-col justify-between overflow-hidden">
-
                 {/* Folders Management */}
                 <div>
                     <h2 className="text-sm font-semibold mb-4">Folders</h2>
-
                     {!selectedFolderObj && (
                         <div className="w-full mb-2 text-left text-sm px-2 py-2 rounded-md bg-muted text-muted-foreground font-medium flex">
                             <FolderTree className="w-5 h-5 mr-2" />
                             Root Directory
                         </div>
                     )}
-
                     {selectedFolderObj && (
                         <div
                             className="w-full mb-2 text-left text-sm px-2 py-2 rounded-md bg-muted text-muted-foreground font-medium cursor-pointer flex"
@@ -231,7 +198,6 @@ export default function MediaBrowserPage() {
                             Back to {allFolders.find((f) => f.id === selectedFolderObj.parent_id)?.name || 'Root'}
                         </div>
                     )}
-
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={selectedFolder}
@@ -259,13 +225,11 @@ export default function MediaBrowserPage() {
                         </motion.div>
                     </AnimatePresence>
                 </div>
-
                 {/* Folder trail */}
                 <div className="mt-4 border-t pt-3 text-xs text-muted-foreground">
                     <span className="font-semibold block mb-1">Current Path</span>
                     <div className="text-xs text-muted-foreground">/{getPathTrail().join(" / ")}</div>
                 </div>
-
                 {/* Create Folder Dialog */}
                 <div className="mt-4">
                     <Dialog open={createFolderDialogOpen} onOpenChange={setCreateFolderDialogOpen}>
@@ -277,7 +241,6 @@ export default function MediaBrowserPage() {
                         <DialogContent className="max-w-sm">
                             <DialogTitle>Create New Folder</DialogTitle>
                             <form onSubmit={handleCreateFolder}>
-                                {/* Folder Name */}
                                 <div className="mb-4">
                                     <label htmlFor="folderName" className="block text-sm font-medium text-muted-foreground">
                                         Folder Name
@@ -291,7 +254,6 @@ export default function MediaBrowserPage() {
                                         required
                                     />
                                 </div>
-                                {/* Parent Folder Dropdown */}
                                 <div className="mb-4">
                                     <label htmlFor="parentFolder" className="block text-sm font-medium text-muted-foreground">
                                         Parent Folder
@@ -313,7 +275,6 @@ export default function MediaBrowserPage() {
                                         If “None” is selected, this folder will be a root folder.
                                     </p>
                                 </div>
-                                {/* Form Actions */}
                                 <div className="flex justify-end gap-2">
                                     <Button type="button" variant="ghost" onClick={() => setCreateFolderDialogOpen(false)}>
                                         Cancel
@@ -327,9 +288,7 @@ export default function MediaBrowserPage() {
                     </Dialog>
                 </div>
             </div>
-
             <Separator orientation="vertical" className="h-full" />
-
             <ScrollArea className="flex-1 border rounded-md p-4">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-sm font-semibold">
@@ -339,7 +298,6 @@ export default function MediaBrowserPage() {
                         <Upload className="w-4 h-4 mr-1" /> Upload
                     </Button>
                 </div>
-
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -350,45 +308,53 @@ export default function MediaBrowserPage() {
                             const oldIndex = visibleUploads.findIndex(item => item.id === active.id)
                             const newIndex = visibleUploads.findIndex(item => item.id === over?.id)
                             const newVisibleUploads = arrayMove(visibleUploads, oldIndex, newIndex)
-                            // Update uploadsState while keeping uploads outside the current folder intact
                             setUploadsState(prevUploads => {
                                 const otherUploads = prevUploads.filter(
-                                    file => !(selectedFolder && file.file_path.startsWith(selectedFolder))
+                                    file => !(selectedFolder && file.src && file.src.includes(selectedFolder))
                                 )
                                 return [...otherUploads, ...newVisibleUploads]
                             })
                         }
                     }}
                 >
-                    <SortableContext
-                        items={visibleUploads.map(item => item.id)}
-                        strategy={rectSortingStrategy}
-                    >
+                    <SortableContext items={visibleUploads.map(item => item.id)} strategy={rectSortingStrategy}>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {visibleUploads.map(file => (
-                                <SortableUpload key={file.id} file={file} />
+                                <SortableImage
+                                    key={file.id}
+                                    image={file}
+                                    selectable={deleteMode}
+                                    selected={selectedForDelete.has(file.id)}
+                                    onToggleSelect={() => {
+                                        setSelectedForDelete((prev) => {
+                                            const updated = new Set(prev)
+                                            updated.has(file.id) ? updated.delete(file.id) : updated.add(file.id)
+                                            return updated
+                                        })
+                                    }}
+                                />
                             ))}
                         </div>
                     </SortableContext>
-
                     <DragOverlay>
                         {activeUpload ? (
                             <Card className="p-4 border-2 border-dashed border-muted bg-muted text-muted-foreground flex flex-col gap-2 items-center justify-center">
-                                <ImageIcon className="w-8 h-8" />
-                                <p className="text-xs">{activeUpload.alt_text}</p>
+                                {activeUpload.src ? (
+                                    <img src={activeUpload.src} alt={activeUpload.alt} className="w-full h-32 object-cover rounded" />
+                                ) : (
+                                    <ImageIcon className="w-8 h-8" />
+                                )}
+                                <p className="text-xs">{activeUpload.alt}</p>
                             </Card>
                         ) : null}
                     </DragOverlay>
                 </DndContext>
-
                 {visibleUploads.length === 0 && (
                     <p className="text-muted-foreground text-sm col-span-full text-center">
                         No files found in this folder.
                     </p>
                 )}
             </ScrollArea>
-
-
         </div>
     )
 }

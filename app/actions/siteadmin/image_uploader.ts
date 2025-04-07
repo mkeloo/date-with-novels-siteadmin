@@ -153,27 +153,55 @@ export async function uploadPackageMediaFiles(formData: FormData) {
 
 
 // Fetch package media files
+// export async function getPackageMediaFiles(packageId: number) {
+//     const supabase = await createClient()
+
+//     const { data, error } = await supabase
+//         .from("uploads")
+//         .select("id, alt_text, file_path")
+//         .eq("ref_type", "package")
+//         .eq("ref_id", packageId)
+//         .order("sort_order", { ascending: true })
+
+//     if (error) {
+//         throw new Error(`Failed to fetch uploads: ${error.message}`)
+//     }
+
+//     const images = data.map((item) => ({
+//         id: item.id,
+//         alt: item.alt_text,
+//         src: supabase.storage.from("date-with-novels").getPublicUrl(item.file_path).data.publicUrl,
+//     }))
+
+//     return images
+// }
+
+// In image_uploader.ts (or wherever you define getPackageMediaFiles)
 export async function getPackageMediaFiles(packageId: number) {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const { data, error } = await supabase
         .from("uploads")
         .select("id, alt_text, file_path")
         .eq("ref_type", "package")
         .eq("ref_id", packageId)
-        .order("sort_order", { ascending: true })
+        .order("sort_order", { ascending: true });
 
     if (error) {
-        throw new Error(`Failed to fetch uploads: ${error.message}`)
+        throw new Error(`Failed to fetch uploads: ${error.message}`);
     }
 
+    // Map each row to include file_path as well as the public URL
     const images = data.map((item) => ({
         id: item.id,
         alt: item.alt_text,
-        src: supabase.storage.from("date-with-novels").getPublicUrl(item.file_path).data.publicUrl,
-    }))
+        src: supabase.storage
+            .from("date-with-novels")
+            .getPublicUrl(item.file_path).data.publicUrl,
+        file_path: item.file_path, // <--- important
+    }));
 
-    return images
+    return images;
 }
 
 
