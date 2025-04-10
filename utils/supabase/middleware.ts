@@ -84,19 +84,6 @@ export async function updateSession(request: NextRequest) {
         error,
     } = await supabase.auth.getUser()
 
-    // // Detect refresh_token_not_found error and force logout
-    // if (!user && error?.message?.toLowerCase().includes("refresh token not found")) {
-    //     const url = request.nextUrl.clone()
-    //     url.pathname = '/login'
-
-    //     const response = NextResponse.redirect(url)
-    //     response.cookies.delete('sb-refresh-token')
-    //     response.cookies.delete('sb-access-token')
-    //     response.headers.set('Cache-Control', 'no-store')
-
-    //     return response
-    // }
-
     // If user is logged in and is trying to access the login page, redirect them to /dashboard.
     if (request.nextUrl.pathname.startsWith("/login") && user) {
         const url = request.nextUrl.clone()
@@ -106,13 +93,30 @@ export async function updateSession(request: NextRequest) {
         return response
     }
 
-    // If there's no user and the user is trying to access a protected route like /dashboard, redirect them to /login.
-    if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
-        const url = request.nextUrl.clone()
-        url.pathname = "/login"
-        const response = NextResponse.redirect(url)
-        response.headers.set('Cache-Control', 'no-store')
-        return response
+    // // If there's no user and the user is trying to access a protected route like /dashboard, redirect them to /login.
+    // if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    //     const url = request.nextUrl.clone()
+    //     url.pathname = "/login"
+    //     const response = NextResponse.redirect(url)
+    //     response.headers.set('Cache-Control', 'no-store')
+    //     return response
+    // }
+
+    // If user is logged in but not an admin, restrict access to admin pages
+    if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
+        const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("user_type_id")
+            .eq("id", user.id) // assuming the user's id is used as PK
+            .single();
+
+        if (!profile || profile.user_type_id !== 1) {
+            const url = request.nextUrl.clone();
+            url.pathname = "/unauthorized";
+            const response = NextResponse.redirect(url);
+            response.headers.set("Cache-Control", "no-store");
+            return response;
+        }
     }
 
     // IMPORTANT: You *must* return the supabaseResponse object as it is.

@@ -1,9 +1,9 @@
 "use client";
-import React, { useActionState, useEffect, useState } from "react";
+import React, { startTransition, useActionState, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { signIn } from "../../actions/auth";
+import { signIn, signInWithGoogle } from "../../actions/auth";
 
 async function signInAction(
     prevState: { error: string } | null,
@@ -39,15 +39,33 @@ export default function LoginPage() {
     }, [state]);
 
 
+    const handleGoogleLogin = () => {
+        startTransition(async () => {
+            await signInWithGoogle();
+        })
+    }
+
+
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-900">
             <form
                 action={formAction}
                 onSubmit={handleSubmit}
-                className="p-8 border-2 border-muted/80 rounded-xl shadow-lg w-96 bg-black"
+                className="p-8 border-2 border-muted/80 rounded-xl shadow-lg w-100 h-40 bg-black"
             >
-                <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
-                <div className="space-y-4">
+                <h1 className="text-3xl font-bold mb-4 text-center">Admin Login</h1>
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full text-base font-semibold border-2 !border-white shadow-md shadow-amber-100 bg-gradient-to-tr from-blue-500 via-green-700 to-cyan-500 text-white hover:scale-105 transition-transform duration-300 ease-in-out"
+                    onClick={handleGoogleLogin}
+                >
+                    Login
+                </Button>
+
+
+                {/* Email / Password */}
+                {/* <div className="space-y-4">
                     <div>
                         <Label htmlFor="email">Email</Label>
                         <Input
@@ -65,7 +83,7 @@ export default function LoginPage() {
                         <Input id="password" name="password" type="password" required />
                     </div>
 
-                    {/* Error State */}
+
                     {state?.error && (
                         <p className="text-red-700 bg-red-200 p-2 rounded-md text-center">
                             {state.error}
@@ -74,7 +92,7 @@ export default function LoginPage() {
                     <Button loading={isLoading} type="submit" className="w-full">
                         Log In
                     </Button>
-                </div>
+                </div> */}
             </form>
         </div>
     );

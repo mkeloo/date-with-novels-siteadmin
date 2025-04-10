@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { headers } from "next/headers";
+
 
 // List of allowed admin emails
 // const ADMIN_USERS = ["admin@siteadmin.com", "admin2@siteadmin.com"];
@@ -45,3 +47,26 @@ export async function signOut() {
     await supabase.auth.signOut();
     redirect("/login");
 }
+
+
+
+export async function signInWithGoogle() {
+    const supabase = await createClient();
+
+    const origin = (await headers()).get("origin");
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+            redirectTo: `${origin}/auth/callback`, // Pass the next path as a query parameter
+        },
+    });
+
+    if (error) {
+        console.error("Google Sign-In Error: ", error.message);
+        redirect("/error");
+    } else if (data.url) {
+        return redirect(data.url); // Supabase handles the OAuth flow
+    }
+}
+
