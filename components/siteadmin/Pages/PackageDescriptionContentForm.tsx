@@ -36,16 +36,35 @@ export default function PackageDescriptionContentForm({
     const [editorWidth, setEditorWidth] = useState(60) // in %
     const isDragging = useRef(false)
 
+    // useEffect(() => {
+    //     async function fetchPackageDetails(id: number) {
+    //         try {
+    //             let data: PackageDescription = await getPackageDescriptionByPackageId(id)
+    //             const plainData = JSON.parse(JSON.stringify(data))
+    //             setLongDesc(plainData.long_description || "")
+    //             setDisclaimer(plainData.reader_notice || DEFAULT_DISCLAIMER)
+    //             setPackageContents(plainData.package_contents || [])
+    //         } catch (error) {
+    //             console.error("Failed to fetch package description:", error)
+    //         }
+    //     }
+
+    //     if (mode === "edit" && packageId) {
+    //         fetchPackageDetails(Number(packageId))
+    //     }
+    // }, [mode, packageId])
+
     useEffect(() => {
         async function fetchPackageDetails(id: number) {
             try {
-                let data: PackageDescription = await getPackageDescriptionByPackageId(id)
-                const plainData = JSON.parse(JSON.stringify(data))
-                setLongDesc(plainData.long_description || "")
-                setDisclaimer(plainData.reader_notice || DEFAULT_DISCLAIMER)
-                setPackageContents(plainData.package_contents || [])
+                const data = await getPackageDescriptionByPackageId(id)
+
+                setLongDesc(data.long_description || "")
+                setDisclaimer(data.reader_notice || DEFAULT_DISCLAIMER)
+                setPackageContents(data.package_contents || [])
             } catch (error) {
-                console.error("Failed to fetch package description:", error)
+                // If no record exists, silently skip (or optionally log)
+                console.warn("No existing package description found. It will be created on save.")
             }
         }
 
