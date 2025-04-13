@@ -31,10 +31,16 @@ export default function OrderCard({ order, containerId, dragOverlay }: OrderCard
     };
 
     return (
-        <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-4">
-            <h4 className="font-bold">{order.customer}</h4>
+        <Card
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className="p-4 shadow hover:shadow-lg transition-shadow duration-200"
+        >
+            <h4 className="text-lg font-bold">{order.customer}</h4>
             <p className="text-sm">{order.items}</p>
-            <p className="text-xs text-muted-foreground">Order ID: {order.id}</p>
+            <p className="text-xs opacity-75">Order ID: {order.id}</p>
         </Card>
     );
 }
