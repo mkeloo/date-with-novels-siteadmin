@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import PackageContentList from "@/components/reusable/PackageContentList"
 import { DEFAULT_DISCLAIMER } from "@/lib/sidebarData"
-import { createPackageDescription, getPackageDescriptionByPackageId, updatePackageDescriptionByPackageId, PackageDescription } from "@/app/actions/siteadmin/package_descriptions"
+import { createPackageDescription, getPackageDescriptionByPackageId, upsertPackageDescriptionByPackageId } from "@/app/actions/siteadmin/package_descriptions"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
@@ -123,12 +123,12 @@ export default function PackageDescriptionContentForm({
             setFormErrors(errors)
             return
         }
-        // Clear errors if validation passes
         setFormErrors({})
 
         try {
             if (mode === "edit") {
-                await updatePackageDescriptionByPackageId(Number(packageId), payload)
+                // Use upsert – it will update if exists, or create if not
+                await upsertPackageDescriptionByPackageId(Number(packageId), payload)
             } else {
                 await createPackageDescription({
                     package_id: Number(packageId),

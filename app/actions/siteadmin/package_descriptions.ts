@@ -91,6 +91,30 @@ export async function updatePackageDescriptionByPackageId(
     return data;
 }
 
+// Use upsert to either update if exists or insert if it doesn't
+export async function upsertPackageDescriptionByPackageId(
+    package_id: number,
+    updates: Partial<PackageDescription>
+) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("package_descriptions")
+        .upsert(
+            {
+                package_id: package_id,
+                ...updates,
+                updated_at: new Date().toISOString()
+            },
+            { onConflict: "package_id" } // use your conflict target (the column that uniquely identifies the row)
+        )
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
 // Delete
 export async function deletePackageDescription(id: number) {
     const supabase = await createClient()
