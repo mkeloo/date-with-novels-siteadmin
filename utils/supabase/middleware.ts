@@ -93,7 +93,7 @@ export async function updateSession(request: NextRequest) {
         return response
     }
 
-    // // If there's no user and the user is trying to access a protected route like /dashboard, redirect them to /login.
+    // If there's no user and the user is trying to access a protected route like /dashboard, redirect them to /login.
     // if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
     //     const url = request.nextUrl.clone()
     //     url.pathname = "/login"
@@ -101,6 +101,12 @@ export async function updateSession(request: NextRequest) {
     //     response.headers.set('Cache-Control', 'no-store')
     //     return response
     // }
+    if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+        // no user, potentially respond by redirecting the user to the login page
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        return NextResponse.redirect(url);
+    }
 
     // If user is logged in but not an admin, restrict access to admin pages
     if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
