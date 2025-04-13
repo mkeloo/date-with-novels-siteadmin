@@ -1,21 +1,18 @@
 "use client";
 import React, { useState } from "react";
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
-import {
-    arrayMove,
-    SortableContext,
-    verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import OrderColumn from "./OrderColumn";
 import OrderCard from "./OrderCard";
-import MoreInfoModal from "./MoreInfoDialog";
-import TrackingIdModal from "./TrackingIdModal";
+import MoreInfoModal from "./MoreInfoDialog";       // Use your modal implementation
+import TrackingIdModal from "./TrackingIdModal";       // Use your modal implementation
 
-// Dummy data for orders
+// Dummy data (with orderedAt on received orders)
 const initialColumns = {
     received: [
-        { id: "1", customer: "Alice", items: "Widget A, Widget B", phase: "received" },
-        { id: "5", customer: "Eli", items: "Widget G, Widget H", phase: "received" },
+        { id: "1", customer: "Alice", items: "Widget A, Widget B", phase: "received", orderedAt: "2025-04-12T12:00:00.000Z" },
+        { id: "5", customer: "Eli", items: "Widget G, Widget H", phase: "received", orderedAt: "2025-04-10T12:00:00.000Z" },
+        { id: "6", customer: "Frank", items: "Widget L, Widget M", phase: "received", orderedAt: "2025-04-11T12:00:00.000Z" },
     ],
     preparing: [{ id: "2", customer: "Bob", items: "Widget C", phase: "preparing" }],
     packing: [{ id: "3", customer: "Charlie", items: "Widget D, Widget E", phase: "packing" }],
@@ -50,7 +47,7 @@ export default function OrdersPage() {
         setShowInfoModal(true);
     };
 
-    // Helper to update order's phase after tracking is provided (unchanged)
+    // Helper to update order's phase after tracking is provided
     const handleTrackingConfirm = (trackingId?: string) => {
         if (trackingOrder && trackingId) {
             const activeContainer = "packing";
@@ -84,6 +81,7 @@ export default function OrdersPage() {
             overContainer = over.id;
         }
 
+        // Special case: dragging from packing to shipped requires tracking ID input
         if (activeContainer === "packing" && overContainer === "shipped") {
             const orderList = columns["packing"];
             const activeIndex = orderList.findIndex((item) => item.id === active.id);

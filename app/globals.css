@@ -76,6 +76,16 @@
     --toast-loading-text: #004f9f;
     --toast-loading-border: #6cbfff;
 
+    /* Order colors */
+    --order-bg-low: #5eff663b;
+    --order-bg-medium: #ffe32979;
+    --order-bg-high: #ff858558;
+
+    --badge-low: #caffb2;
+    --badge-medium: #fff5a9;
+    --badge-high: #ff9d9d;
+
+
   }
 
   .dark {
@@ -378,4 +388,17 @@
 
 .slide-in-left {
   animation: slideInFromLeft 0.25s ease-out;
+}
+
+
+.order-bg-low {
+  background-color: var(--order-bg-low);
+}
+
+.order-bg-medium {
+  background-color: var(--order-bg-medium);
+}
+
+.order-bg-high {
+  background-color: var(--order-bg-high);
 }
