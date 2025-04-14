@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { Orders } from "@/app/actions/siteadmin/orders";
+import { Orders, updateOrderById } from "@/app/actions/siteadmin/orders";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -10,17 +10,25 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
+
+const STATUS_FLOW: Orders["status"][] = ["received", "preparing", "packing", "shipped", "delivered"];
+
 
 interface OrdersColumnOptions {
     onViewOrder: (orderId: number) => void;
     onDeleteOrder: (orderId: number) => void;
+    onStatusChange: (id: number, newStatus: Orders["status"]) => void;
     tick: number;
+    animatedRowId?: number | null;
 }
 
 export function createOrderColumns({
     onViewOrder,
     onDeleteOrder,
+    onStatusChange,
     tick,
+    animatedRowId,
 }: OrdersColumnOptions): ColumnDef<Orders>[] {
     return [
         {
@@ -131,6 +139,9 @@ export function createOrderColumns({
         //     },
         //     size: 100,
         // },
+
+        // Order status with icons
+
         {
             accessorKey: "status",
             enableSorting: true,
@@ -146,55 +157,49 @@ export function createOrderColumns({
                 </div>
             ),
             cell: ({ row }) => {
-                const status = row.getValue<string>("status");
+                const order = row.original;
+                const currentIndex = STATUS_FLOW.indexOf(order.status);
+                const nextStatus = STATUS_FLOW[(currentIndex + 1) % STATUS_FLOW.length];
 
-                let label = "";
-                let icon = null;
-                let bgClass = "";
-                let iconColor = "text-white";
+                const isAnimated = animatedRowId === order.id;
 
-                switch (status) {
-                    case "received":
-                        label = "Received";
-                        icon = "Inbox";
-                        bgClass = "bg-sky-500 text-white"; // Flashy red/pink for attention
-                        break;
-                    case "preparing":
-                        label = "Preparing";
-                        icon = "ChefHat";
-                        bgClass = "bg-violet-600 text-white"; // Warm and active
-                        break;
-                    case "packing":
-                        label = "Packing";
-                        icon = "Package";
-                        bgClass = "bg-rose-500 text-white"; // Bright yellow
-                        break;
-                    case "shipped":
-                        label = "Shipped";
-                        icon = "Truck";
-                        bgClass = "bg-orange-400 text-white"; // Cool blue
-                        break;
-                    case "delivered":
-                        label = "Delivered";
-                        icon = "CheckCircle";
-                        bgClass = "bg-green-600 text-white"; // Confident success green
-                        break;
-                    default:
-                        label = "Unknown";
-                        icon = "HelpCircle";
-                        bgClass = "bg-neutral-400 text-white";
-                }
+                const handleClick = async () => {
+                    try {
+                        await updateOrderById(order.id, { status: nextStatus });
+                        onStatusChange(order.id, nextStatus); // 🔁 triggers animation + data update
+                    } catch (err) {
+                        console.error("Failed to update status", err);
+                    }
+                };
+
+                const statusMeta = {
+                    received: { label: "Received", icon: "Inbox", bg: "bg-sky-500" },
+                    preparing: { label: "Preparing", icon: "ChefHat", bg: "bg-violet-600" },
+                    packing: { label: "Packing", icon: "Package", bg: "bg-rose-500" },
+                    shipped: { label: "Shipped", icon: "Truck", bg: "bg-orange-400" },
+                    delivered: { label: "Delivered", icon: "CheckCircle", bg: "bg-green-600" },
+                };
+
+                const { label, icon, bg } = statusMeta[order.status] ?? {
+                    label: "Unknown",
+                    icon: "HelpCircle",
+                    bg: "bg-neutral-400",
+                };
 
                 const Icon = require("lucide-react")[icon];
 
                 return (
-                    <div className={`w-full h-full px-2 py-2 font-bold font-mono text-center rounded flex items-center justify-start gap-2 text-sm text-white ${bgClass}`}>
-                        {Icon && <Icon className={`w-6 h-6 ${iconColor}`} strokeWidth={2} />}
+                    <button
+                        onClick={handleClick}
+                        className={`w-full h-full px-2 py-2 font-bold font-mono text-center rounded flex items-center justify-start gap-2 text-sm text-white transition-all duration-500 ease-in-out
+                            ${bg} ${isAnimated ? "blur-sm opacity-0 animate-[fadeInShimmerBlur_0.4s_ease-in-out_forwards]" : ""}`}
+                    >
+                        {Icon && <Icon className="w-5 h-5" strokeWidth={2} />}
                         <span className="capitalize">{label}</span>
-                    </div>
+                    </button>
                 );
             },
-            size: 160,
+            size: 170,
         },
         {
             accessorKey: "tracking_id",

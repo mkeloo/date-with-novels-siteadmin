@@ -45,6 +45,8 @@ export default function OrdersPage() {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = useState({});
     const [tick, setTick] = useState(0);
+    const [animatedRowId, setAnimatedRowId] = useState<number | null>(null);
+
 
     // Trigger re-render every second
     useEffect(() => {
@@ -86,14 +88,27 @@ export default function OrdersPage() {
         }
     }, []);
 
+
+    const handleStatusChange = (id: number, newStatus: Orders["status"]) => {
+        setData((prev) =>
+            prev.map((order) =>
+                order.id === id ? { ...order, status: newStatus, updated_at: new Date().toISOString() } : order
+            )
+        );
+        setAnimatedRowId(id);
+        setTimeout(() => setAnimatedRowId(null), 400); // animation duration
+    };
+
     const columns = useMemo(
         () =>
             createOrderColumns({
                 onViewOrder: handleEditOrder,
                 onDeleteOrder: handleDeleteOrder,
+                onStatusChange: handleStatusChange,
                 tick,
+                animatedRowId,
             }),
-        [handleEditOrder, handleDeleteOrder, tick]
+        [handleEditOrder, handleDeleteOrder, handleStatusChange, tick, animatedRowId]
     );
 
     const table = useReactTable({
