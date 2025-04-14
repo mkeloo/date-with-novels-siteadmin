@@ -279,34 +279,53 @@ export function createOrderColumns({
             },
             size: 180,
         },
+        // {
+        //     id: "actions",
+        //     header: () => <div className="text-center">Actions</div>,
+        //     cell: ({ row }) => {
+        //         const order = row.original;
+        //         return (
+        //             <div className="w-full flex justify-center">
+        //                 <DropdownMenu>
+        //                     <DropdownMenuTrigger asChild>
+        //                         <Button variant="ghost" className="h-8 w-8 p-0">
+        //                             <MoreHorizontal className="h-4 w-4" />
+        //                         </Button>
+        //                     </DropdownMenuTrigger>
+        //                     <DropdownMenuContent align="end">
+        //                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        //                         <DropdownMenuSeparator />
+        //                         <DropdownMenuItem onClick={() => onViewOrder(order.id)}>
+        //                             View
+        //                         </DropdownMenuItem>
+        //                         <DropdownMenuItem onClick={() => onDeleteOrder(order.id)}>
+        //                             Delete
+        //                         </DropdownMenuItem>
+        //                     </DropdownMenuContent>
+        //                 </DropdownMenu>
+        //             </div>
+        //         );
+        //     },
+        //     size: 140,
+        // },
         {
             id: "actions",
             header: () => <div className="text-center">Actions</div>,
             cell: ({ row }) => {
                 const order = row.original;
+
                 return (
-                    <div className="w-full flex justify-center">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => onViewOrder(order.id)}>
-                                    View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onDeleteOrder(order.id)}>
-                                    Delete
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="flex justify-center gap-2">
+                        <Button disableLoader size="sm" variant="secondary" onClick={() => onViewOrder(order.id)}>
+                            View
+                        </Button>
+                        <Button disableLoader size="sm" variant="destructive" onClick={() => onDeleteOrder(order.id)}>
+                            Delete
+                        </Button>
                     </div>
                 );
             },
-            size: 140,
-        },
+            size: 180,
+        }
     ];
 }

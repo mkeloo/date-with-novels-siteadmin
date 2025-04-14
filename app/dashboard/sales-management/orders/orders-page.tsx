@@ -35,14 +35,14 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TrackingIdDialog from "@/components/siteadmin/Orders/TrackingIdDialog";
+import OrderViewDialog from "@/components/siteadmin/Orders/OrderViewDialog";
+import OrderDeleteDialog from "@/components/siteadmin/Orders/OrderDeleteDialog";
+
 
 export default function OrdersPage() {
     const [data, setData] = useState<Orders[]>([]);
     const [loading, setLoading] = useState(true);
-    const [trackingDialog, setTrackingDialog] = useState<{
-        open: boolean;
-        orderId: number | null;
-    }>({ open: false, orderId: null });
+
 
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -51,6 +51,15 @@ export default function OrdersPage() {
     const [rowSelection, setRowSelection] = useState({});
     const [tick, setTick] = useState(0);
     const [animatedRowId, setAnimatedRowId] = useState<number | null>(null);
+
+    // State for modals
+    const [trackingDialog, setTrackingDialog] = useState<{
+        open: boolean;
+        orderId: number | null;
+    }>({ open: false, orderId: null });
+    const [viewDialog, setViewDialog] = useState<{ open: boolean; order: Orders | null }>({ open: false, order: null });
+    const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; orderId: number | null }>({ open: false, orderId: null });
+
 
 
     // Trigger re-render every second
@@ -78,20 +87,27 @@ export default function OrdersPage() {
     const handleEditOrder = async (id: number) => {
         try {
             const order = await getOrderById(id);
-            console.log("Editing order:", order);
+            setViewDialog({ open: true, order });
         } catch (err) {
-            console.error("Failed to load order for edit", err);
+            console.error("Failed to load order", err);
         }
     };
 
-    const handleDeleteOrder = useCallback(async (id: number) => {
+    const handleDeleteOrder = (id: number) => {
+        setDeleteDialog({ open: true, orderId: id });
+    };
+
+    const confirmDeleteOrder = async () => {
+        if (!deleteDialog.orderId) return;
         try {
-            await deleteOrderById(id);
-            setData((prev) => prev.filter((o) => o.id !== id));
+            await deleteOrderById(deleteDialog.orderId);
+            setData((prev) => prev.filter((o) => o.id !== deleteDialog.orderId));
         } catch (err) {
-            console.error("Failed to delete order", err);
+            console.error("Delete failed", err);
+        } finally {
+            setDeleteDialog({ open: false, orderId: null });
         }
-    }, []);
+    };
 
 
     const handleStatusChange = (id: number, newStatus: Orders["status"]) => {
@@ -320,10 +336,25 @@ export default function OrdersPage() {
                 </Button>
             </div>
 
+
+            {/* Dialog Boxes */}
             <TrackingIdDialog
                 open={trackingDialog.open}
                 onClose={closeTrackingDialog}
                 onConfirm={handleTrackingSubmit}
+            />
+
+            <OrderViewDialog
+                open={viewDialog.open}
+                order={viewDialog.order}
+                onClose={() => setViewDialog({ open: false, order: null })}
+            />
+
+            <OrderDeleteDialog
+                open={deleteDialog.open}
+                orderId={deleteDialog.orderId}
+                onClose={() => setDeleteDialog({ open: false, orderId: null })}
+                onConfirm={confirmDeleteOrder}
             />
         </div>
     );
