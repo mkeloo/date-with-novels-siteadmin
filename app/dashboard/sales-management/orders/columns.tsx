@@ -23,7 +23,14 @@ export function createOrderColumns({
     return [
         {
             accessorKey: "id",
-            header: () => <div className="text-center">Order ID</div>,
+            header: ({ column }) => (
+                <div className="text-center">
+                    <Button disableLoader variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                        Order ID
+                        <ArrowUpDown className="ml-2" />
+                    </Button>
+                </div>
+            ),
             cell: ({ row }) => <div className="text-center">{row.getValue("id")}</div>,
             size: 60,
         },
@@ -40,22 +47,33 @@ export function createOrderColumns({
         {
             accessorKey: "package_id",
             header: () => <div className="text-center">Package</div>,
-            cell: ({ row }) => <div className="text-center">{row.getValue("package_id")}</div>,
+            cell: ({ row }) => (
+                <div className="text-center">{row.getValue("package_id")}</div>
+            ),
             size: 100,
         },
         {
             accessorKey: "transaction_id",
             header: () => <div className="text-center">Transaction</div>,
             cell: ({ row }) => (
-                <div className="text-center">{row.getValue("transaction_id") ?? "—"}</div>
+                <div className="text-center">
+                    {row.getValue("transaction_id") ?? "—"}
+                </div>
             ),
             size: 100,
         },
         {
             accessorKey: "status",
+            enableSorting: true,
             header: ({ column }) => (
                 <div className="text-center">
-                    <Button disableLoader variant="ghost" onClick={() => column.toggleSorting()}>
+                    <Button
+                        disableLoader
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                    >
                         Status <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
@@ -69,14 +87,24 @@ export function createOrderColumns({
         {
             accessorKey: "tracking_id",
             header: () => <div className="text-center">Tracking ID</div>,
-            cell: ({ row }) => <div className="text-center">{row.getValue("tracking_id") ?? "—"}</div>,
+            cell: ({ row }) => (
+                <div className="text-center">
+                    {row.getValue("tracking_id") ?? "—"}
+                </div>
+            ),
             size: 180,
         },
         {
             accessorKey: "ordered_at",
             header: ({ column }) => (
                 <div className="text-center">
-                    <Button disableLoader variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    <Button
+                        disableLoader
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                    >
                         Ordered At <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
@@ -92,7 +120,13 @@ export function createOrderColumns({
             accessorKey: "updated_at",
             header: ({ column }) => (
                 <div className="text-center">
-                    <Button disableLoader variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    <Button
+                        disableLoader
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                    >
                         Updated At <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
@@ -113,15 +147,19 @@ export function createOrderColumns({
                     <div className="flex justify-center">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button disableLoader variant="ghost" className="h-8 w-8 p-0">
+                                <Button variant="ghost" className="h-8 w-8 p-0">
                                     <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => onViewOrder(order.id)}>View</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onDeleteOrder(order.id)}>Delete</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onViewOrder(order.id)}>
+                                    View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onDeleteOrder(order.id)}>
+                                    Delete
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
