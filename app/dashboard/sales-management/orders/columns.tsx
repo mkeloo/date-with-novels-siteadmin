@@ -66,7 +66,18 @@ export function createOrderColumns({
         },
         {
             id: "priority",
-            header: () => <div className="text-center">Priority</div>,
+            enableSorting: true,
+            header: ({ column }) => (
+                <div className="text-center">
+                    <Button
+                        disableLoader
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Priority <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
+            ),
             cell: ({ row, table }) => {
                 const { tick } = table.options.meta as { tick: number };
 
@@ -128,9 +139,7 @@ export function createOrderColumns({
                     <Button
                         disableLoader
                         variant="ghost"
-                        onClick={() =>
-                            column.toggleSorting(column.getIsSorted() === "asc")
-                        }
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Status <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
@@ -138,9 +147,54 @@ export function createOrderColumns({
             ),
             cell: ({ row }) => {
                 const status = row.getValue<string>("status");
-                return <div className="text-center capitalize">{status}</div>;
+
+                let label = "";
+                let icon = null;
+                let bgClass = "";
+                let iconColor = "text-white";
+
+                switch (status) {
+                    case "received":
+                        label = "Received";
+                        icon = "Inbox";
+                        bgClass = "bg-sky-500 text-white"; // Flashy red/pink for attention
+                        break;
+                    case "preparing":
+                        label = "Preparing";
+                        icon = "ChefHat";
+                        bgClass = "bg-violet-600 text-white"; // Warm and active
+                        break;
+                    case "packing":
+                        label = "Packing";
+                        icon = "Package";
+                        bgClass = "bg-rose-500 text-white"; // Bright yellow
+                        break;
+                    case "shipped":
+                        label = "Shipped";
+                        icon = "Truck";
+                        bgClass = "bg-orange-400 text-white"; // Cool blue
+                        break;
+                    case "delivered":
+                        label = "Delivered";
+                        icon = "CheckCircle";
+                        bgClass = "bg-green-600 text-white"; // Confident success green
+                        break;
+                    default:
+                        label = "Unknown";
+                        icon = "HelpCircle";
+                        bgClass = "bg-neutral-400 text-white";
+                }
+
+                const Icon = require("lucide-react")[icon];
+
+                return (
+                    <div className={`w-full h-full px-2 py-2 font-bold font-mono text-center rounded flex items-center justify-start gap-2 text-sm text-white ${bgClass}`}>
+                        {Icon && <Icon className={`w-6 h-6 ${iconColor}`} strokeWidth={2} />}
+                        <span className="capitalize">{label}</span>
+                    </div>
+                );
             },
-            size: 120,
+            size: 160,
         },
         {
             accessorKey: "tracking_id",
