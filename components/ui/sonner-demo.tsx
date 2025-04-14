@@ -8,6 +8,7 @@ export function SonnerDemo() {
     return (
         <div className="flex flex-col lg:flex-row items-start gap-4">
             <Button
+                disableLoader
                 variant="outline"
                 onClick={() =>
                     toast.success("Event has been created", {
@@ -22,6 +23,7 @@ export function SonnerDemo() {
                 Show Success Toast
             </Button>
             <Button
+                disableLoader
                 variant="outline"
                 onClick={() =>
                     toast.warning("Warning: Event creation failed", {
@@ -36,6 +38,7 @@ export function SonnerDemo() {
                 Show Warning Toast
             </Button>
             <Button
+                disableLoader
                 variant="outline"
                 onClick={() =>
                     toast.error("Error: Event creation failed", {
@@ -51,6 +54,7 @@ export function SonnerDemo() {
                 Show Error Toast
             </Button>
             <Button
+                disableLoader
                 variant="outline"
                 onClick={() =>
                     toast.info("Info: Event creation in progress", {
@@ -65,6 +69,7 @@ export function SonnerDemo() {
                 Show Info Toast
             </Button>
             <Button
+                disableLoader
                 variant="outline"
                 onClick={() =>
                     toast("This is a default toast", {

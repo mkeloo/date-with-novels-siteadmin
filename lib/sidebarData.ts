@@ -139,6 +139,22 @@ export const data = {
         },
     ],
     navSecondary: [
+        // {
+        //     title: "Dashboard",
+        //     url: "#",
+        //     items: [
+        //         {
+        //             title: "Home",
+        //             url: "/dashboard/analytics/sales-analytics",
+        //             icon: ChartNoAxesCombined,
+        //         },
+        //         {
+        //             title: "Settings",
+        //             url: "/dashboard/analytics/ga4-analytics",
+        //             icon: ChartPie,
+        //         },
+        //     ],
+        // },
         {
             title: "Analytics",
             url: "#",
