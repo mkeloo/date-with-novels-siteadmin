@@ -146,7 +146,7 @@ export default function OrdersPage() {
             </Card>
 
             <div className="w-full overflow-x-auto rounded-md border h-[600px]">
-                <div className="w-full h-[600px] overflow-y-auto block">
+                <div className="w-full h-[600px] overflow-y-auto block no-scrollbar">
                     <Table className="table-auto w-full">
                         <TableHeader className="sticky top-0 z-10">
                             {table.getHeaderGroups().map((headerGroup) => (
