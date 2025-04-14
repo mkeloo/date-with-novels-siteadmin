@@ -228,6 +228,12 @@ export function createOrderColumns({
         },
         {
             accessorKey: "ordered_at",
+            filterFn: (row, columnId, filterValue: Date) => {
+                const rowDate = new Date(row.getValue<string>(columnId));
+                return (
+                    rowDate.toDateString() === filterValue.toDateString()
+                );
+            },
             header: ({ column }) => (
                 <div className="text-center">
                     <Button

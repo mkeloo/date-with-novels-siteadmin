@@ -37,6 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import TrackingIdDialog from "@/components/siteadmin/Orders/TrackingIdDialog";
 import OrderViewDialog from "@/components/siteadmin/Orders/OrderViewDialog";
 import OrderDeleteDialog from "@/components/siteadmin/Orders/OrderDeleteDialog";
+import { DatePickerFilter } from "@/components/siteadmin/Orders/DatePickerFilter";
 
 
 export default function OrdersPage() {
@@ -188,24 +189,18 @@ export default function OrdersPage() {
 
                 {/* Total Entries Per Page */}
                 <div className="flex flex-wrap items-center gap-4">
-                    {/* Entries Per Page */}
-                    <Select
-                        value={String(pagination.pageSize)}
-                        onValueChange={(val) =>
-                            setPagination({ pageIndex: 0, pageSize: Number(val) })
-                        }
-                    >
-                        <SelectTrigger className="w-[100px]">
-                            <SelectValue placeholder="Page size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {[10, 20, 30, 40, 50].map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                    {n}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+
+
+                    {/* Date Filter */}
+                    <DatePickerFilter
+                        date={(table.getColumn("ordered_at")?.getFilterValue() as Date) || undefined}
+                        onChange={(date) => {
+                            setColumnFilters((prev) => [
+                                ...prev.filter((f) => f.id !== "ordered_at"),
+                                ...(date ? [{ id: "ordered_at", value: date }] : []),
+                            ]);
+                        }}
+                    />
 
                     {/* Filter: Status */}
                     <Select
@@ -252,12 +247,31 @@ export default function OrdersPage() {
                             ))}
                         </SelectContent>
                     </Select>
+
+                    {/* Entries Per Page */}
+                    <Select
+                        value={String(pagination.pageSize)}
+                        onValueChange={(val) =>
+                            setPagination({ pageIndex: 0, pageSize: Number(val) })
+                        }
+                    >
+                        <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Page size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[10, 20, 30, 40, 50].map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                    {n}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </Card>
 
             <div className="w-full overflow-x-auto rounded-md border h-[600px]">
                 <div className="w-full h-[600px] overflow-y-auto block no-scrollbar">
-                    <Table className="table-auto w-full">
+                    <Table className="table-auto w-full mb-4">
                         <TableHeader className="sticky top-0 z-10">
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
