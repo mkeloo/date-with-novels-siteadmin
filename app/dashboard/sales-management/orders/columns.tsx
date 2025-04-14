@@ -48,7 +48,7 @@ export function createOrderColumns({
         },
         {
             accessorKey: "package_id",
-            header: () => <div className="text-center">Package</div>,
+            header: () => <div className="text-center">Package ID</div>,
             cell: ({ row }) => (
                 <div className="text-center">{row.getValue("package_id")}</div>
             ),
@@ -256,7 +256,7 @@ export function createOrderColumns({
             cell: ({ row }) => {
                 const order = row.original;
                 return (
-                    <div className="flex justify-center">
+                    <div className="w-full flex justify-center">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -277,7 +277,7 @@ export function createOrderColumns({
                     </div>
                 );
             },
-            size: 100,
+            size: 140,
         },
     ];
 }
