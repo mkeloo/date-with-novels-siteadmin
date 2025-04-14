@@ -66,7 +66,7 @@ export function createOrderColumns({
         },
         {
             accessorKey: "transaction_id",
-            header: () => <div className="text-center">Transaction</div>,
+            header: () => <div className="text-center">Transaction ID</div>,
             cell: ({ row }) => (
                 <div className="text-center">
                     {row.getValue("transaction_id") ?? "—"}
