@@ -19,6 +19,7 @@ interface OrdersColumnOptions {
     onViewOrder: (orderId: number) => void;
     onDeleteOrder: (orderId: number) => void;
     onStatusChange: (id: number, newStatus: Orders["status"]) => void;
+    openTrackingDialog: (orderId: number) => void;
     tick: number;
     animatedRowId?: number | null;
 }
@@ -27,6 +28,7 @@ export function createOrderColumns({
     onViewOrder,
     onDeleteOrder,
     onStatusChange,
+    openTrackingDialog,
     tick,
     animatedRowId,
 }: OrdersColumnOptions): ColumnDef<Orders>[] {
@@ -164,9 +166,14 @@ export function createOrderColumns({
                 const isAnimated = animatedRowId === order.id;
 
                 const handleClick = async () => {
+                    if (nextStatus === "shipped" && !order.tracking_id) {
+                        openTrackingDialog(order.id); // Trigger dialog for tracking ID
+                        return;
+                    }
+
                     try {
                         await updateOrderById(order.id, { status: nextStatus });
-                        onStatusChange(order.id, nextStatus); // 🔁 triggers animation + data update
+                        onStatusChange(order.id, nextStatus); // Local update
                     } catch (err) {
                         console.error("Failed to update status", err);
                     }

@@ -34,10 +34,15 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import TrackingIdDialog from "@/components/siteadmin/Orders/TrackingIdDialog";
 
 export default function OrdersPage() {
     const [data, setData] = useState<Orders[]>([]);
     const [loading, setLoading] = useState(true);
+    const [trackingDialog, setTrackingDialog] = useState<{
+        open: boolean;
+        orderId: number | null;
+    }>({ open: false, orderId: null });
 
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -99,16 +104,41 @@ export default function OrdersPage() {
         setTimeout(() => setAnimatedRowId(null), 400); // animation duration
     };
 
+    const openTrackingDialog = (orderId: number) =>
+        setTrackingDialog({ open: true, orderId });
+
+    const closeTrackingDialog = () =>
+        setTrackingDialog({ open: false, orderId: null });
+
+    const handleTrackingSubmit = async (trackingId: string) => {
+        if (!trackingDialog.orderId) return;
+        try {
+            await updateOrderById(trackingDialog.orderId, {
+                status: "shipped",
+                tracking_id: trackingId,
+            });
+            handleStatusChange(trackingDialog.orderId, "shipped");
+        } catch (err) {
+            console.error("Failed to update with tracking ID", err);
+        } finally {
+            closeTrackingDialog();
+        }
+    };
+
+
+    // Memoize the columns to avoid re-creating them on every render
+    // This is important for performance, especially with large datasets
     const columns = useMemo(
         () =>
             createOrderColumns({
                 onViewOrder: handleEditOrder,
                 onDeleteOrder: handleDeleteOrder,
                 onStatusChange: handleStatusChange,
+                openTrackingDialog,
                 tick,
                 animatedRowId,
             }),
-        [handleEditOrder, handleDeleteOrder, handleStatusChange, tick, animatedRowId]
+        [handleEditOrder, handleDeleteOrder, handleStatusChange, openTrackingDialog, tick, animatedRowId]
     );
 
     const table = useReactTable({
@@ -240,6 +270,12 @@ export default function OrdersPage() {
                     Next
                 </Button>
             </div>
+
+            <TrackingIdDialog
+                open={trackingDialog.open}
+                onClose={closeTrackingDialog}
+                onConfirm={handleTrackingSubmit}
+            />
         </div>
     );
 }
