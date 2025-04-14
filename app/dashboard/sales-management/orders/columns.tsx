@@ -74,9 +74,25 @@ export function createOrderColumns({
             ),
             size: 100,
         },
+
+        // Priority status with time elapsed
         {
             id: "priority",
             enableSorting: true,
+            filterFn: (row, columnId, value) => {
+                const status = row.original.status;
+                const orderedAt = new Date(row.original.ordered_at);
+                const now = new Date();
+                const diffMs = now.getTime() - orderedAt.getTime();
+
+                let priority = "low";
+                if (status !== "shipped") {
+                    if (diffMs >= 1000 * 60 * 60 * 48) priority = "high";
+                    else if (diffMs >= 1000 * 60 * 60 * 24) priority = "medium";
+                }
+
+                return priority === value;
+            },
             header: ({ column }) => (
                 <div className="text-center">
                     <Button
@@ -84,7 +100,7 @@ export function createOrderColumns({
                         variant="ghost"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
-                        Priority <ArrowUpDown className="ml-2 h-4 w-4" />
+                        Priority Status <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
             ),
@@ -147,6 +163,7 @@ export function createOrderColumns({
         {
             accessorKey: "status",
             enableSorting: true,
+            filterFn: "equals",
             header: ({ column }) => (
                 <div className="text-center">
                     <Button

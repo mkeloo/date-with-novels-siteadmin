@@ -169,7 +169,10 @@ export default function OrdersPage() {
         <div className="w-full max-w-[1200px] mx-auto">
             <Card className="w-full flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 mb-4">
                 <h1 className="text-2xl font-semibold">Orders</h1>
+
+                {/* Total Entries Per Page */}
                 <div className="flex flex-wrap items-center gap-4">
+                    {/* Entries Per Page */}
                     <Select
                         value={String(pagination.pageSize)}
                         onValueChange={(val) =>
@@ -183,6 +186,52 @@ export default function OrdersPage() {
                             {[10, 20, 30, 40, 50].map((n) => (
                                 <SelectItem key={n} value={String(n)}>
                                     {n}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {/* Filter: Status */}
+                    <Select
+                        onValueChange={(val) => {
+                            setColumnFilters((prev) => [
+                                ...prev.filter((f) => f.id !== "status"),
+                                ...(val !== "all" ? [{ id: "status", value: val }] : []),
+                            ])
+                        }}
+                        value={(table.getColumn("status")?.getFilterValue() as string) || "all"}
+                    >
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Filter: Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Status: All</SelectItem>
+                            {["received", "preparing", "packing", "shipped", "delivered"].map((status) => (
+                                <SelectItem key={status} value={status}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {/* Filter: Priority */}
+                    <Select
+                        onValueChange={(val) => {
+                            setColumnFilters((prev) => [
+                                ...prev.filter((f) => f.id !== "priority"),
+                                ...(val !== "all" ? [{ id: "priority", value: val }] : []),
+                            ])
+                        }}
+                        value={(table.getColumn("priority")?.getFilterValue() as string) || "all"}
+                    >
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Filter: Priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Priority: All</SelectItem>
+                            {["low", "medium", "high"].map((level) => (
+                                <SelectItem key={level} value={level}>
+                                    {level.charAt(0).toUpperCase() + level.slice(1)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
