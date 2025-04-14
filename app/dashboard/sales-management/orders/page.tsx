@@ -44,6 +44,15 @@ export default function OrdersPage() {
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = useState({});
+    const [tick, setTick] = useState(0);
+
+    // Trigger re-render every second
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTick((t) => t + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -82,12 +91,14 @@ export default function OrdersPage() {
             createOrderColumns({
                 onViewOrder: handleEditOrder,
                 onDeleteOrder: handleDeleteOrder,
+                tick,
             }),
-        [handleEditOrder, handleDeleteOrder]
+        [handleEditOrder, handleDeleteOrder, tick]
     );
 
     const table = useReactTable({
         data,
+        meta: { tick },
         columns,
         enableColumnResizing: true,
         columnResizeMode: "onChange" as ColumnResizeMode,

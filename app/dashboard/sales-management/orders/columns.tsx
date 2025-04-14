@@ -14,11 +14,13 @@ import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 interface OrdersColumnOptions {
     onViewOrder: (orderId: number) => void;
     onDeleteOrder: (orderId: number) => void;
+    tick: number;
 }
 
 export function createOrderColumns({
     onViewOrder,
     onDeleteOrder,
+    tick,
 }: OrdersColumnOptions): ColumnDef<Orders>[] {
     return [
         {
@@ -61,6 +63,44 @@ export function createOrderColumns({
                 </div>
             ),
             size: 100,
+        },
+        {
+            id: "priority",
+            header: () => <div className="text-center">Priority</div>,
+            cell: ({ row, table }) => {
+                const { tick } = table.options.meta as { tick: number };
+
+                const status = row.original.status;
+                const orderedAt = new Date(row.original.ordered_at);
+                const now = new Date();
+                const diffMs = now.getTime() - orderedAt.getTime();
+                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMin = Math.floor((diffMs / (1000 * 60)) % 60);
+                const diffSec = Math.floor((diffMs / 1000) % 60);
+
+                const timeStr = `${String(diffHrs).padStart(2, "0")}:${String(diffMin).padStart(2, "0")}:${String(diffSec).padStart(2, "0")}`;
+
+                let priority = "Low";
+                let bgClass = "bg-green-700";
+
+                if (status !== "shipped") {
+                    if (diffMs >= 1000 * 60 * 60 * 48) {
+                        priority = "High";
+                        bgClass = "bg-red-700";
+                    } else if (diffMs >= 1000 * 60 * 60 * 24) {
+                        priority = "Medium";
+                        bgClass = "bg-yellow-600";
+                    }
+                }
+
+                // Return a full-width styled div to fill the TableCell area
+                return (
+                    <div className={`w-full h-full px-2 py-2 text-center font-medium rounded text-white ${bgClass}`}>
+                        <span className="font-bold font-mono tracking-wider">{priority}</span> ({timeStr})
+                    </div>
+                );
+            },
+            size: 210,
         },
         {
             accessorKey: "status",
