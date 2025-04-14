@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Card } from "@/components/ui/card";
-import OrderCard from "./OrderCard";
+import OrderCard from "./Kanban/OrderCard";
 import { useDroppable } from "@dnd-kit/core";
 
 interface Order {

@@ -4,7 +4,7 @@ import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import OrderColumn from "./OrderColumn";
 import OrderCard from "./OrderCard";
-import MoreInfoModal from "./MoreInfoDialog";       // Use your modal implementation
+import MoreInfoModal from "../MoreInfoDialog";       // Use your modal implementation
 import TrackingIdModal from "./TrackingIdModal";       // Use your modal implementation
 
 // Dummy data (with orderedAt on received orders)
