@@ -95,13 +95,31 @@ export function createOrderColumns({
 
                 // Return a full-width styled div to fill the TableCell area
                 return (
-                    <div className={`w-full h-full px-2 py-2 text-center font-medium rounded text-white ${bgClass}`}>
-                        <span className="font-bold font-mono tracking-wider">{priority}</span> ({timeStr})
+                    <div className={`w-full h-full px-2 py-2 font-bold font-mono text-center rounded text-white ${bgClass} transition-colors duration-500 ease-in-out`}>
+                        {priority} <span className="text-[13px]">({timeStr})</span>
                     </div>
                 );
             },
             size: 210,
         },
+        // {
+        //     id: "time_elapsed",
+        //     header: () => <div className="text-center">Elapsed</div>,
+        //     cell: ({ row, table }) => {
+        //         const { tick } = table.options.meta as { tick: number };
+        //         const orderedAt = new Date(row.original.ordered_at);
+        //         const now = new Date();
+        //         const diffMs = now.getTime() - orderedAt.getTime();
+        //         const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+        //         const diffMin = Math.floor((diffMs / (1000 * 60)) % 60);
+        //         const diffSec = Math.floor((diffMs / 1000) % 60);
+        //         const timeStr = `${String(diffHrs).padStart(2, "0")}:${String(diffMin).padStart(2, "0")}:${String(diffSec).padStart(2, "0")}`;
+        //         return (
+        //             <div className="text-center font-mono text-sm w-[90px]">{timeStr}</div>
+        //         );
+        //     },
+        //     size: 100,
+        // },
         {
             accessorKey: "status",
             enableSorting: true,
