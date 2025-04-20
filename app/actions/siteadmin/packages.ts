@@ -16,8 +16,14 @@ export type Packages = {
     price: number
     allowed_genres: string[]
     package_tier: number
+    supports_themed?: boolean
+    supports_regular?: boolean
     created_at: string
     updated_at: string
+    stripe_product_id?: string | null
+    stripe_price_id?: string | null
+    is_stripe_synced?: boolean
+    stripe_sync_error?: string | null
 }
 
 
