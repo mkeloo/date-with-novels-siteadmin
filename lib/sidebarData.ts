@@ -22,7 +22,8 @@ import {
     Heart,
     Star,
     Percent,
-    Image
+    Image,
+    RefreshCw
 } from "lucide-react"
 
 export const data = {
@@ -200,6 +201,11 @@ export const data = {
                     title: "Packages",
                     url: "/dashboard/product-settings/packages",
                     icon: Package,
+                },
+                {
+                    title: "Stripe Packages Sync",
+                    url: "/dashboard/product-settings/stripe-packages-sync",
+                    icon: RefreshCw,
                 },
                 {
                     title: "Package Tiers",
