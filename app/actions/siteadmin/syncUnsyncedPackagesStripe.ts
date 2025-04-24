@@ -1,11 +1,18 @@
 "use server"
 
 import { createClient } from "@/utils/supabase/server"
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY!)
-
+import Stripe from "stripe"
 import { getPackagesById } from "./packages"
 import { getPackageMediaFiles } from "./image_uploader"
 
+// initialize Stripe client with correct API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2025-03-31.basil",
+})
+
+//
+//  Types
+//
 //  Types
 
 // /v1/products
@@ -105,27 +112,31 @@ export type PackageStripeSync = {
     sync_error: string | null
 }
 
-// Action                                          -              Purpose
-// getAllStripeProducts()                          -     Pull current Stripe catalog
-// getStripeProductById(productId)                 -     Fetch & compare one Stripe product
-// syncPackageToStripe(packageId)                  -     Already done
-// resyncPackageToStripe(packageId)                -     Update existing Stripe product
-// bulkSyncUnsyncedPackages()                      -     Loop through .is_stripe_synced === false
+//
+//  Actions
+//  - getAllStripeProducts()         — Pull current Stripe catalog
+//  - getStripeProductById()         — Fetch & compare one Stripe product
+//  - syncPackageToStripe()          — Create or update Stripe product + price
+//  - resyncPackageToStripe()        — Update existing Stripe product + price
+//  - bulkSyncUnsyncedPackages()     — Loop through unsynced packages
+//
 
-
-// getAllStripeProducts() - Pull current Stripe catalog
+/**
+ * getAllStripeProducts()
+ *  - Pull current Stripe catalog (products + first price)
+ */
 export async function getAllStripeProducts(): Promise<
-    (StripeProductResponse & { price?: StripePriceResponse | null })[]
+    (Stripe.Product & { price?: Stripe.Price | null })[]
 > {
     try {
-        const products = await stripe.products.list({ limit: 100 })
-        const prices = await stripe.prices.list({ limit: 100 })
+        const productsList = await stripe.products.list({ limit: 100 })
+        const pricesList = await stripe.prices.list({ limit: 100 })
 
-        return products.data.map((product: StripeProductResponse) => {
-            const price = prices.data.find((p: StripePriceResponse) => p.product === product.id)
+        return productsList.data.map((product) => {
+            const matched = pricesList.data.find((p) => p.product === product.id) || null
             return {
                 ...product,
-                price: price || null,
+                price: matched,
             }
         })
     } catch (err: any) {
@@ -134,103 +145,161 @@ export async function getAllStripeProducts(): Promise<
     }
 }
 
-// getStripeProductById(productId) - Fetch & compare one Stripe product
+/**
+ * getStripeProductById
+ *  - fetch full Stripe product + its first price
+ */
 export async function getStripeProductById(
     productId: string
-): Promise<(StripeProductResponse & { price?: StripePriceResponse | null }) | null> {
+): Promise<(Stripe.Product & { price?: Stripe.Price | null }) | null> {
     try {
-        const product: StripeProductResponse = await stripe.products.retrieve(productId)
-        const priceList = await stripe.prices.list({ product: productId, limit: 1 })
-        const price = priceList.data[0] || null
-
+        const product = await stripe.products.retrieve(productId)
+        const prices = await stripe.prices.list({ product: productId, limit: 1 })
         return {
             ...product,
-            price,
+            price: prices.data[0] || null,
         }
     } catch (err: any) {
-        console.error(`Failed to retrieve Stripe product [${productId}]:`, err.message)
+        console.error(`Failed to retrieve Stripe product [${productId}]:`, err)
         return null
     }
 }
 
+/**
+ * syncPackageToStripe
+ *  - if no sync record exists, create product+price
+ *  - if sync exists, update product then issue a new price
+ *  - upsert into package_stripe_sync ON package_id
+ */
+export async function syncPackageToStripe(packageId: number): Promise<void> {
+    const supabase = await createClient()
+    const pkg = await getPackagesById(packageId)
+    const media = await getPackageMediaFiles(pkg.id)
+    const images = media.slice(0, 3).map((m) => m.src)
 
-// getStripeSyncRecord(packageId) - Fetch sync record for a package
+    // Fetch any existing sync record
+    const { data: existingSync } = await supabase
+        .from("package_stripe_sync")
+        .select("stripe_product_id")
+        .eq("package_id", packageId)
+        .single()
+
+    let productId = existingSync?.stripe_product_id
+
+    try {
+        if (productId) {
+            // —— UPDATE existing Stripe product —— 
+            await stripe.products.update(productId, {
+                name: pkg.name,
+                description: pkg.short_description || undefined,
+                images,
+                url: `https://datewithnovels.com/packages/${pkg.slug}`,
+                metadata: {
+                    slug: pkg.slug,
+                    theme_id: pkg.theme_id?.toString() ?? "null",
+                    package_tier: pkg.package_tier?.toString() ?? "null",
+                    supports_themed: pkg.supports_themed ? "true" : "false",
+                    supports_regular: pkg.supports_regular ? "true" : "false",
+                },
+            })
+        } else {
+            // —— CREATE brand-new Stripe product —— 
+            const created = await stripe.products.create({
+                name: pkg.name,
+                description: pkg.short_description || undefined,
+                images,
+                url: `https://datewithnovels.com/packages/${pkg.slug}`,
+                shippable: true,
+                metadata: {
+                    slug: pkg.slug,
+                    theme_id: pkg.theme_id?.toString() ?? "null",
+                    package_tier: pkg.package_tier?.toString() ?? "null",
+                    supports_themed: pkg.supports_themed ? "true" : "false",
+                    supports_regular: pkg.supports_regular ? "true" : "false",
+                },
+            })
+            productId = created.id
+        }
+
+        // —— ALWAYS create a new Price —— 
+        const newPrice = await stripe.prices.create({
+            product: productId!,
+            currency: "usd",
+            unit_amount: Math.round(pkg.price * 100),
+        })
+
+        // —— Upsert our sync record —— 
+        const { error: upsertError } = await supabase
+            .from("package_stripe_sync")
+            .upsert(
+                {
+                    package_id: packageId,
+                    stripe_product_id: productId!,
+                    stripe_price_id: newPrice.id,
+                    sync_status: "synced",
+                    last_synced_at: new Date().toISOString(),
+                    sync_error: null,
+                },
+                { onConflict: "package_id" }  // pass a string, never an array
+            )
+
+        if (upsertError) {
+            console.error("Upsert error:", upsertError)
+        }
+    } catch (err: any) {
+        console.error("Stripe sync failed:", err)
+
+        // fallback: mark it failed
+        await supabase
+            .from("package_stripe_sync")
+            .upsert(
+                {
+                    package_id: packageId,
+                    stripe_product_id: productId ?? "",
+                    stripe_price_id: "",
+                    sync_status: "failed",
+                    last_synced_at: new Date().toISOString(),
+                    sync_error: err.message,
+                },
+                { onConflict: "package_id" }
+            )
+    }
+}
+
+/**
+ * getStripeSyncRecord
+ *  - helper to fetch sync row for UI
+ */
 export async function getStripeSyncRecord(packageId: number) {
     const supabase = await createClient()
-
     const { data, error } = await supabase
         .from("package_stripe_sync")
         .select("*")
         .eq("package_id", packageId)
         .single()
 
-    if (error) return null
+    if (error) {
+        console.error("[getStripeSyncRecord] error:", error)
+        return null
+    }
     return data as PackageStripeSync
 }
 
-// syncPackageToStripe(packageId) - Create new product + price for unsynced package
-export async function syncPackageToStripe(packageId: number): Promise<void> {
-    const supabase = await createClient()
-    const pkg = await getPackagesById(packageId)
-    const media = await getPackageMediaFiles(pkg.id)
-    const imageUrls = media.slice(0, 3).map((img) => img.src)
-
-    try {
-        const stripeProduct = await stripe.products.create({
-            name: pkg.name,
-            description: pkg.short_description || undefined,
-            images: imageUrls,
-            url: `https://datewithnovels.com/packages/${pkg.slug}`,
-            shippable: true,
-            metadata: {
-                slug: pkg.slug,
-                theme_id: pkg.theme_id?.toString() ?? "null",
-                supports_themed: pkg.supports_themed ? "true" : "false",
-                supports_regular: pkg.supports_regular ? "true" : "false",
-                package_tier: pkg.package_tier?.toString() ?? "null",
-            },
-        })
-
-        const stripePrice = await stripe.prices.create({
-            unit_amount: Math.round(pkg.price * 100),
-            currency: "usd",
-            product: stripeProduct.id,
-        })
-
-        await supabase.from("package_stripe_sync").insert({
-            package_id: pkg.id,
-            stripe_product_id: stripeProduct.id,
-            stripe_price_id: stripePrice.id,
-            sync_status: "synced",
-            last_synced_at: new Date().toISOString(),
-            sync_error: null,
-        })
-    } catch (err: any) {
-        console.error("Stripe sync failed:", err)
-
-        await supabase.from("package_stripe_sync").insert({
-            package_id: pkg.id,
-            stripe_product_id: "",
-            stripe_price_id: "",
-            sync_status: "failed",
-            last_synced_at: new Date().toISOString(),
-            sync_error: err.message,
-        })
-    }
-}
-
-// resyncPackageToStripe(packageId) - Update existing product + create new price
+/**
+ * resyncPackageToStripe
+ *  - Update existing product + create new price
+ */
 export async function resyncPackageToStripe(packageId: number): Promise<void> {
     const supabase = await createClient()
     const pkg = await getPackagesById(packageId)
     const media = await getPackageMediaFiles(pkg.id)
-    const imageUrls = media.slice(0, 3).map((img) => img.src)
+    const images = media.slice(0, 3).map((m) => m.src)
 
     // Fetch current sync record
     const { data: syncRecord } = await supabase
         .from("package_stripe_sync")
         .select("stripe_product_id")
-        .eq("package_id", pkg.id)
+        .eq("package_id", packageId)
         .single()
 
     const productId = syncRecord?.stripe_product_id
@@ -240,7 +309,7 @@ export async function resyncPackageToStripe(packageId: number): Promise<void> {
         await stripe.products.update(productId, {
             name: pkg.name,
             description: pkg.short_description || undefined,
-            images: imageUrls,
+            images,
             url: `https://datewithnovels.com/packages/${pkg.slug}`,
             metadata: {
                 slug: pkg.slug,
@@ -252,9 +321,9 @@ export async function resyncPackageToStripe(packageId: number): Promise<void> {
         })
 
         const stripePrice = await stripe.prices.create({
-            unit_amount: Math.round(pkg.price * 100),
-            currency: "usd",
             product: productId,
+            currency: "usd",
+            unit_amount: Math.round(pkg.price * 100),
         })
 
         await supabase
@@ -265,10 +334,9 @@ export async function resyncPackageToStripe(packageId: number): Promise<void> {
                 sync_error: null,
                 last_synced_at: new Date().toISOString(),
             })
-            .eq("package_id", pkg.id)
+            .eq("package_id", packageId)
     } catch (err: any) {
         console.error("Stripe resync failed:", err)
-
         await supabase
             .from("package_stripe_sync")
             .update({
@@ -276,27 +344,25 @@ export async function resyncPackageToStripe(packageId: number): Promise<void> {
                 sync_error: err.message,
                 last_synced_at: new Date().toISOString(),
             })
-            .eq("package_id", pkg.id)
+            .eq("package_id", packageId)
     }
 }
 
-// bulkSyncUnsyncedPackages() - Loop through .is_stripe_synced === false
+/**
+ * bulkSyncUnsyncedPackages()
+ *  - Loop through .is_stripe_synced === null
+ */
 export async function bulkSyncUnsyncedPackages(): Promise<{ status: string }> {
     const supabase = await createClient()
-
     const { data: packages, error } = await supabase
         .from("packages")
-        .select("*")
-        .is("stripe_product_id", null) // Or switch to LEFT JOIN if needed in future
+        .select("id")
+        .is("stripe_product_id", null)
 
-    if (error) throw new Error("Failed to fetch unsynced packages")
+    if (error) throw error
 
-    for (const pkg of packages) {
-        try {
-            await syncPackageToStripe(pkg.id)
-        } catch (err: any) {
-            console.error(`Bulk sync failed for package ${pkg.slug}:`, err.message)
-        }
+    for (const pkg of packages!) {
+        await syncPackageToStripe(pkg.id)
     }
 
     return { status: "done" }
