@@ -10,6 +10,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import LoadingPageSkeleton from "@/components/reusable/LoadingPageSkeleton"
 
 type FieldStatus = "match" | "mismatch" | "missing"
 interface SyncStatus {
@@ -69,7 +70,10 @@ export default function StripePackagesSyncClient() {
         })
     }
 
-    return (
+    return packages.length === 0 || Object.keys(stripeData).length < packages.length ? (
+        // <div className="text-center text-muted-foreground py-10 text-sm">Loading Stripe sync data...</div>
+        <LoadingPageSkeleton />
+    ) : (
         <div className="w-full h-full p-4 flex flex-col gap-4">
             <Card className="p-4 flex flex-row justify-between items-center">
                 <h1 className="text-2xl font-bold">Stripe Packages Sync</h1>
@@ -116,19 +120,13 @@ export default function StripePackagesSyncClient() {
                                     {renderField("Slug", stripe?.metadata?.slug ?? "—", status.slug)}
                                     {renderField(
                                         "Price",
-                                        stripe?.price ? `$${(stripe.price.unit_amount / 100).toFixed(2)}` : "—",
+                                        stripe?.price?.unit_amount !== null && stripe?.price?.unit_amount !== undefined
+                                            ? `$${(stripe.price.unit_amount / 100).toFixed(2)}`
+                                            : "—",
                                         status.price
                                     )}
-                                    {renderField(
-                                        "Supports Themed",
-                                        stripe?.metadata?.supports_themed ?? "—",
-                                        status.supports_themed
-                                    )}
-                                    {renderField(
-                                        "Supports Regular",
-                                        stripe?.metadata?.supports_regular ?? "—",
-                                        status.supports_regular
-                                    )}
+                                    {renderField("Supports Themed", stripe?.metadata?.supports_themed ?? "—", status.supports_themed)}
+                                    {renderField("Supports Regular", stripe?.metadata?.supports_regular ?? "—", status.supports_regular)}
                                     {renderField("Theme ID", stripe?.metadata?.theme_id ?? "—", status.theme_id)}
                                     {renderField("Tier", stripe?.metadata?.package_tier ?? "—", status.package_tier)}
                                 </div>
@@ -145,50 +143,50 @@ export default function StripePackagesSyncClient() {
             </div>
         </div>
     )
-}
 
-// Field renderer
-function renderField(label: string, value: string, status: FieldStatus) {
-    const bg = {
-        match: "bg-green-500/40",
-        mismatch: "bg-red-500/40",
-        missing: "bg-muted",
-    }[status]
-    return (
-        <div className={cn("text-sm rounded-md px-3 py-2", bg)}>
-            <span className="font-medium">{label}:</span> <span className="ml-1">{value}</span>
-        </div>
-    )
-}
-
-// All‐missing fallback
-function createMissingStatuses(): SyncStatus {
-    return {
-        name: "missing",
-        slug: "missing",
-        price: "missing",
-        supports_themed: "missing",
-        supports_regular: "missing",
-        theme_id: "missing",
-        package_tier: "missing",
+    // Field renderer
+    function renderField(label: string, value: string, status: FieldStatus) {
+        const bg = {
+            match: "bg-green-500/40",
+            mismatch: "bg-red-500/40",
+            missing: "bg-muted",
+        }[status]
+        return (
+            <div className={cn("text-sm rounded-md px-3 py-2", bg)}>
+                <span className="font-medium">{label}:</span> <span className="ml-1">{value}</span>
+            </div>
+        )
     }
-}
 
-// Compare DB vs. Stripe
-function determineStatuses(pkg: Packages, stripe: StripeProductWithPrice): SyncStatus {
-    const cmp = (a?: string, b?: string): FieldStatus => (a === b ? "match" : "mismatch")
+    // All‐missing fallback
+    function createMissingStatuses(): SyncStatus {
+        return {
+            name: "missing",
+            slug: "missing",
+            price: "missing",
+            supports_themed: "missing",
+            supports_regular: "missing",
+            theme_id: "missing",
+            package_tier: "missing",
+        }
+    }
 
-    return {
-        name: cmp(pkg.name, stripe?.name),
-        slug: cmp(pkg.slug, stripe?.metadata.slug),
-        price: stripe?.price
-            ? stripe.price.unit_amount !== null && Math.round(pkg.price * 100).toString() === stripe.price.unit_amount.toString()
-                ? "match"
-                : "mismatch"
-            : "missing",
-        supports_themed: cmp(pkg.supports_themed ? "true" : "false", stripe?.metadata.supports_themed),
-        supports_regular: cmp(pkg.supports_regular ? "true" : "false", stripe?.metadata.supports_regular),
-        theme_id: cmp(pkg.theme_id?.toString(), stripe?.metadata.theme_id),
-        package_tier: cmp(pkg.package_tier?.toString(), stripe?.metadata.package_tier),
+    // Compare DB vs. Stripe
+    function determineStatuses(pkg: Packages, stripe: StripeProductWithPrice): SyncStatus {
+        const cmp = (a?: string, b?: string): FieldStatus => (a === b ? "match" : "mismatch")
+
+        return {
+            name: cmp(pkg.name, stripe?.name),
+            slug: cmp(pkg.slug, stripe?.metadata.slug),
+            price: stripe?.price
+                ? stripe.price.unit_amount !== null && Math.round(pkg.price * 100).toString() === stripe.price.unit_amount.toString()
+                    ? "match"
+                    : "mismatch"
+                : "missing",
+            supports_themed: cmp(pkg.supports_themed ? "true" : "false", stripe?.metadata.supports_themed),
+            supports_regular: cmp(pkg.supports_regular ? "true" : "false", stripe?.metadata.supports_regular),
+            theme_id: cmp(pkg.theme_id?.toString(), stripe?.metadata.theme_id),
+            package_tier: cmp(pkg.package_tier?.toString(), stripe?.metadata.package_tier),
+        }
     }
 }
