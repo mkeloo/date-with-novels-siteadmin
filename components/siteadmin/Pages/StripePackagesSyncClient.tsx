@@ -71,7 +71,7 @@ export default function StripePackagesSyncClient() {
 
     return (
         <div className="w-full h-full p-4 flex flex-col gap-4">
-            <Card className="p-4 flex justify-between items-center">
+            <Card className="p-4 flex flex-row justify-between items-center">
                 <h1 className="text-2xl font-bold">Stripe Packages Sync</h1>
                 <Button variant="outline" disabled={isPending}>
                     Sync All
@@ -116,7 +116,7 @@ export default function StripePackagesSyncClient() {
                                     {renderField("Slug", stripe?.metadata?.slug ?? "—", status.slug)}
                                     {renderField(
                                         "Price",
-                                        stripe?.price && stripe.price.unit_amount !== null ? `$${(stripe.price.unit_amount / 100).toFixed(2)}` : "—",
+                                        stripe?.price ? `$${(stripe.price.unit_amount / 100).toFixed(2)}` : "—",
                                         status.price
                                     )}
                                     {renderField(
