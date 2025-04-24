@@ -172,13 +172,16 @@ export async function getStripeProductById(
  *  - upsert into package_stripe_sync ON package_id
  */
 export async function syncPackageToStripe(packageId: number): Promise<void> {
-    const supabase = await createClient()
+    // 1) Grab your Supabase client (no await—createClient returns it immediately)
+    const supabase = createClient()
+
+    // 2) Load the package + media
     const pkg = await getPackagesById(packageId)
     const media = await getPackageMediaFiles(pkg.id)
     const images = media.slice(0, 3).map((m) => m.src)
 
-    // Fetch any existing sync record
-    const { data: existingSync } = await supabase
+    // 3) See if we already have a stripe_product_id
+    const { data: existingSync } = await (await supabase)
         .from("package_stripe_sync")
         .select("stripe_product_id")
         .eq("package_id", packageId)
@@ -187,8 +190,8 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
     let productId = existingSync?.stripe_product_id
 
     try {
+        // —— UPDATE or CREATE the Stripe Product —— 
         if (productId) {
-            // —— UPDATE existing Stripe product —— 
             await stripe.products.update(productId, {
                 name: pkg.name,
                 description: pkg.short_description || undefined,
@@ -203,7 +206,6 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
                 },
             })
         } else {
-            // —— CREATE brand-new Stripe product —— 
             const created = await stripe.products.create({
                 name: pkg.name,
                 description: pkg.short_description || undefined,
@@ -228,43 +230,57 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
             unit_amount: Math.round(pkg.price * 100),
         })
 
-        // —— Upsert our sync record —— 
-        const { error: upsertError } = await supabase
+        // —— Upsert into package_stripe_sync —— 
+        const { data, error } = await (await supabase)
             .from("package_stripe_sync")
             .upsert(
+                [
+                    {
+                        package_id: packageId,
+                        stripe_product_id: productId!,
+                        stripe_price_id: newPrice.id,
+                        sync_status: "synced",
+                        last_synced_at: new Date().toISOString(),
+                        sync_error: null,
+                    },
+                ],
                 {
-                    package_id: packageId,
-                    stripe_product_id: productId!,
-                    stripe_price_id: newPrice.id,
-                    sync_status: "synced",
-                    last_synced_at: new Date().toISOString(),
-                    sync_error: null,
-                },
-                { onConflict: "package_id" }  // pass a string, never an array
+                    onConflict: "package_id",
+                }
             )
 
-        if (upsertError) {
-            console.error("Upsert error:", upsertError)
+        if (error) {
+            console.error("❌ Upsert into package_stripe_sync failed:", error)
+        } else {
+            console.log("✅ Upserted sync row:", data)
         }
     } catch (err: any) {
-        console.error("Stripe sync failed:", err)
+        console.error("🔥 Stripe sync failed:", err)
 
-        // fallback: mark it failed
-        await supabase
+        // fallback: mark as FAILED in your table
+        const { error } = await (await supabase)
             .from("package_stripe_sync")
             .upsert(
-                {
-                    package_id: packageId,
-                    stripe_product_id: productId ?? "",
-                    stripe_price_id: "",
-                    sync_status: "failed",
-                    last_synced_at: new Date().toISOString(),
-                    sync_error: err.message,
-                },
+                [
+                    {
+                        package_id: packageId,
+                        stripe_product_id: productId ?? "",
+                        stripe_price_id: "",
+                        sync_status: "failed",
+                        last_synced_at: new Date().toISOString(),
+                        sync_error: err.message,
+                    },
+                ],
                 { onConflict: "package_id" }
             )
+
+        if (error) {
+            console.error("❌ Fallback upsert failed too:", error)
+        }
     }
 }
+
+
 
 /**
  * getStripeSyncRecord
