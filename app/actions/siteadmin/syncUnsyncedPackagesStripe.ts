@@ -171,26 +171,29 @@ export async function getStripeProductById(
  *  - if sync exists, update product then issue a new price
  *  - upsert into package_stripe_sync ON package_id
  */
+/**
+ * syncPackageToStripe
+ *  - if no sync record exists, create product+price
+ *  - if sync exists, update product then issue a new price if the amount changed
+ *  - upsert into package_stripe_sync ON package_id
+ */
 export async function syncPackageToStripe(packageId: number): Promise<void> {
-    // 1) Grab your Supabase client (no await—createClient returns it immediately)
-    const supabase = createClient()
+    const supabase = createClient();
 
-    // 2) Load the package + media
-    const pkg = await getPackagesById(packageId)
-    const media = await getPackageMediaFiles(pkg.id)
-    const images = media.slice(0, 3).map((m) => m.src)
+    const pkg = await getPackagesById(packageId);
+    const media = await getPackageMediaFiles(pkg.id);
+    const images = media.slice(0, 3).map((m) => m.src);
 
-    // 3) See if we already have a stripe_product_id
     const { data: existingSync } = await (await supabase)
         .from("package_stripe_sync")
-        .select("stripe_product_id")
+        .select("stripe_product_id, stripe_price_id")
         .eq("package_id", packageId)
-        .single()
+        .single();
 
-    let productId = existingSync?.stripe_product_id
+    let productId = existingSync?.stripe_product_id;
+    let currentStripePriceId = existingSync?.stripe_price_id;
 
     try {
-        // —— UPDATE or CREATE the Stripe Product —— 
         if (productId) {
             await stripe.products.update(productId, {
                 name: pkg.name,
@@ -204,7 +207,7 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
                     supports_themed: pkg.supports_themed ? "true" : "false",
                     supports_regular: pkg.supports_regular ? "true" : "false",
                 },
-            })
+            });
         } else {
             const created = await stripe.products.create({
                 name: pkg.name,
@@ -219,67 +222,74 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
                     supports_themed: pkg.supports_themed ? "true" : "false",
                     supports_regular: pkg.supports_regular ? "true" : "false",
                 },
-            })
-            productId = created.id
+            });
+            productId = created.id;
         }
 
-        // —— ALWAYS create a new Price —— 
-        const newPrice = await stripe.prices.create({
-            product: productId!,
-            currency: "usd",
-            unit_amount: Math.round(pkg.price * 100),
-        })
+        let shouldCreateNewPrice = true;
 
-        // —— Upsert into package_stripe_sync —— 
-        const { data, error } = await (await supabase)
-            .from("package_stripe_sync")
-            .upsert(
-                [
-                    {
-                        package_id: packageId,
-                        stripe_product_id: productId!,
-                        stripe_price_id: newPrice.id,
-                        sync_status: "synced",
-                        last_synced_at: new Date().toISOString(),
-                        sync_error: null,
-                    },
-                ],
-                {
-                    onConflict: "package_id",
-                }
-            )
+        if (currentStripePriceId) {
+            const currentStripePrice = await stripe.prices.retrieve(currentStripePriceId);
 
-        if (error) {
-            console.error("❌ Upsert into package_stripe_sync failed:", error)
-        } else {
-            console.log("✅ Upserted sync row:", data)
+            if (currentStripePrice.unit_amount === Math.round(pkg.price * 100)) {
+                shouldCreateNewPrice = false; // Price matches; no new price needed
+            } else {
+                // Deactivate old price if amount changed
+                await stripe.prices.update(currentStripePriceId, { active: false });
+            }
         }
-    } catch (err: any) {
-        console.error("🔥 Stripe sync failed:", err)
 
-        // fallback: mark as FAILED in your table
+        let newPriceId = currentStripePriceId;
+
+        // Only create new price if local price changed
+        if (shouldCreateNewPrice) {
+            const newPrice = await stripe.prices.create({
+                product: productId!,
+                currency: "usd",
+                unit_amount: Math.round(pkg.price * 100),
+            });
+            newPriceId = newPrice.id;
+        }
+
+        // Upsert sync record
         const { error } = await (await supabase)
             .from("package_stripe_sync")
             .upsert(
-                [
-                    {
-                        package_id: packageId,
-                        stripe_product_id: productId ?? "",
-                        stripe_price_id: "",
-                        sync_status: "failed",
-                        last_synced_at: new Date().toISOString(),
-                        sync_error: err.message,
-                    },
-                ],
+                {
+                    package_id: packageId,
+                    stripe_product_id: productId!,
+                    stripe_price_id: newPriceId!,
+                    sync_status: "synced",
+                    last_synced_at: new Date().toISOString(),
+                    sync_error: null,
+                },
                 { onConflict: "package_id" }
-            )
+            );
 
         if (error) {
-            console.error("❌ Fallback upsert failed too:", error)
+            console.error("Upsert into package_stripe_sync failed:", error);
+        } else {
+            console.log("Upserted sync row successfully");
         }
+    } catch (err: any) {
+        console.error("Stripe sync failed:", err);
+
+        // fallback: mark as FAILED
+        await (await supabase)
+            .from("package_stripe_sync")
+            .upsert(
+                {
+                    package_id: packageId,
+                    stripe_product_id: productId ?? "",
+                    stripe_price_id: "",
+                    sync_status: "failed",
+                    last_synced_at: new Date().toISOString(),
+                    sync_error: err.message,
+                },
+                { onConflict: "package_id" }
+            );
     }
 }
-
 
 
 /**
