@@ -106,10 +106,16 @@ export default function StripePackagesSyncClient() {
         })
     }
 
-    return packages.length === 0 || Object.keys(stripeData).length < packages.length ? (
-        // <div className="text-center text-muted-foreground py-10 text-sm">Loading Stripe sync data...</div>
-        <LoadingPageSkeleton />
-    ) : (
+    if (
+        packages.length === 0 ||
+        Object.keys(stripeData).length < packages.length ||
+        Object.keys(themeMap).length < packages.length ||
+        Object.keys(tierMap).length < packages.length
+    ) {
+        return <LoadingPageSkeleton />
+    }
+
+    return (
         <div className="w-full h-full p-4 flex flex-col gap-4">
             <Card className="p-4 flex flex-row justify-between items-center">
                 <h1 className="text-2xl font-bold">Stripe Packages Sync</h1>
