@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import LoadingPageSkeleton from "@/components/reusable/LoadingPageSkeleton"
+import LoadingSkeletonStripe from "@/components/skeleton/LoadingSkeletonStripe"
 
 type FieldStatus = "match" | "mismatch" | "missing"
 interface SyncStatus {
@@ -112,16 +113,16 @@ export default function StripePackagesSyncClient() {
         Object.keys(themeMap).length < packages.length ||
         Object.keys(tierMap).length < packages.length
     ) {
-        return <LoadingPageSkeleton />
+        return <LoadingSkeletonStripe />
     }
 
     return (
         <div className="w-full h-full p-4 flex flex-col gap-4">
-            <Card className="p-4 flex flex-row justify-between items-center">
+            <Card className="p-4 flex flex-row justify-center items-center">
                 <h1 className="text-2xl font-bold">Stripe Packages Sync</h1>
-                <Button variant="outline" disabled={isPending}>
+                {/* <Button variant="outline" disabled={isPending}>
                     Sync All
-                </Button>
+                </Button> */}
             </Card>
 
             <div className="grid gap-4">
@@ -146,17 +147,17 @@ export default function StripePackagesSyncClient() {
                             </CardHeader>
 
                             <CardContent>
-                                <Table className="font-mono border-2">
+                                <Table className="table-fixed w-full font-mono border-2">
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="font-bold text-white">Database Data</TableHead>
-                                            <TableHead className="font-bold text-white">Stripe Data</TableHead>
+                                            <TableHead className="font-bold text-white px-3">Database Data</TableHead>
+                                            <TableHead className="font-bold text-white px-3">Stripe Data</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         <TableRow>
                                             {/* ——— Database column ——— */}
-                                            <TableCell className="space-y-2">
+                                            <TableCell className="space-y-2 whitespace-normal break-words">
                                                 {renderField("Name", pkg.name, "match")}
                                                 {renderField("Slug", pkg.slug, "match")}
                                                 {renderField("Price", `$${pkg.price.toFixed(2)}`, "match")}
@@ -168,7 +169,7 @@ export default function StripePackagesSyncClient() {
                                             </TableCell>
 
                                             {/* ——— Stripe column ——— */}
-                                            <TableCell className="space-y-2">
+                                            <TableCell className="space-y-2 whitespace-normal break-words">
                                                 {renderField(
                                                     "Name",
                                                     stripe?.name ?? "—",
