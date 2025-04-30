@@ -2,12 +2,23 @@
 
 import React, { useEffect, useState, useTransition } from "react"
 import { getPackages, Packages } from "@/app/actions/siteadmin/packages"
+import { getPackageTierById } from "@/app/actions/siteadmin/package_tier"
+import { getThemeById } from "@/app/actions/siteadmin/themes"
 import {
     getStripeSyncRecord,
     getStripeProductById,
     syncPackageToStripe,
 } from "@/app/actions/siteadmin/syncUnsyncedPackagesStripe"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import {
+    Table,
+    TableHeader,
+    TableRow,
+    TableHead,
+    TableBody,
+    TableCell,
+} from "@/components/ui/table"
+
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import LoadingPageSkeleton from "@/components/reusable/LoadingPageSkeleton"
@@ -17,10 +28,11 @@ interface SyncStatus {
     name: FieldStatus
     slug: FieldStatus
     price: FieldStatus
-    supports_themed: FieldStatus
-    supports_regular: FieldStatus
-    theme_id: FieldStatus
+    theme: FieldStatus
     package_tier: FieldStatus
+    allowed_genres: FieldStatus
+    created_at: FieldStatus
+    updated_at: FieldStatus
 }
 
 type StripeProductWithPrice = Awaited<ReturnType<typeof getStripeProductById>>
@@ -29,28 +41,52 @@ export default function StripePackagesSyncClient() {
     const [packages, setPackages] = useState<Packages[]>([])
     const [stripeData, setStripeData] = useState<Record<number, StripeProductWithPrice | null>>({})
     const [isPending, startTransition] = useTransition()
+    const [themeMap, setThemeMap] = useState<Record<number, string>>({})
+    const [tierMap, setTierMap] = useState<Record<number, string>>({})
 
     // on mount: load packages + their Stripe sync + product
     useEffect(() => {
         async function loadAll() {
-            try {
-                const pkgs = await getPackages()
-                setPackages(pkgs)
+            const pkgs = await getPackages()
+            setPackages(pkgs)
 
-                const data: Record<number, StripeProductWithPrice | null> = {}
-                for (const pkg of pkgs) {
-                    const sync = await getStripeSyncRecord(pkg.id)
-                    if (sync?.stripe_product_id) {
-                        data[pkg.id] = await getStripeProductById(sync.stripe_product_id)
-                    } else {
-                        data[pkg.id] = null
-                    }
+            // Fetch stripe data in parallel
+            const stripePromises = pkgs.map(async (pkg) => {
+                const sync = await getStripeSyncRecord(pkg.id)
+                if (sync?.stripe_product_id) {
+                    return await getStripeProductById(sync.stripe_product_id)
                 }
-                setStripeData(data)
-            } catch (err) {
-                console.error("Failed to load packages or Stripe data", err)
-            }
+                return null
+            })
+            const stripeResults = await Promise.all(stripePromises)
+            const data: Record<number, StripeProductWithPrice | null> = {}
+            pkgs.forEach((pkg, i) => (data[pkg.id] = stripeResults[i]))
+            setStripeData(data)
+
+            // Now resolve theme/tier names
+            const themes: Record<number, string> = {}
+            const tiers: Record<number, string> = {}
+
+            await Promise.all(pkgs.map(async (pkg) => {
+                if (pkg.theme_id != null) {
+                    const theme = await getThemeById(pkg.theme_id)
+                    themes[pkg.id] = theme?.theme_name ?? "—"
+                } else {
+                    themes[pkg.id] = "—"
+                }
+
+                if (pkg.package_tier != null) {
+                    const tier = await getPackageTierById(pkg.package_tier)
+                    tiers[pkg.id] = tier?.name ?? "—"
+                } else {
+                    tiers[pkg.id] = "—"
+                }
+            }))
+
+            setThemeMap(themes)
+            setTierMap(tiers)
         }
+
         loadAll()
     }, [])
 
@@ -85,11 +121,14 @@ export default function StripePackagesSyncClient() {
             <div className="grid gap-4">
                 {packages.map((pkg) => {
                     const stripe = stripeData[pkg.id]
+                    const themeName = themeMap[pkg.id] || "—"
+                    const tierName = tierMap[pkg.id] || "—"
                     const status: SyncStatus = stripe
-                        ? determineStatuses(pkg, stripe)
+                        ? determineStatuses(pkg, stripe, themeName, tierName)
                         : createMissingStatuses()
 
                     const hasMismatch = Object.values(status).some((s) => s !== "match")
+
 
                     return (
                         <Card key={pkg.id} className="p-4 flex flex-col gap-4">
@@ -100,38 +139,77 @@ export default function StripePackagesSyncClient() {
                                 </Button>
                             </CardHeader>
 
-                            <CardContent className="grid grid-cols-2 gap-4">
-                                {/* DB side */}
-                                <div className="flex flex-col gap-2">
-                                    <h3 className="font-semibold text-sm mb-1">Database</h3>
-                                    {renderField("Name", pkg.name, "match")}
-                                    {renderField("Slug", pkg.slug, "match")}
-                                    {renderField("Price", `$${pkg.price.toFixed(2)}`, "match")}
-                                    {renderField("Supports Themed", pkg.supports_themed ? "Yes" : "No", "match")}
-                                    {renderField("Supports Regular", pkg.supports_regular ? "Yes" : "No", "match")}
-                                    {renderField("Theme ID", pkg.theme_id?.toString() || "-", "match")}
-                                    {renderField("Tier", pkg.package_tier?.toString() || "-", "match")}
-                                </div>
+                            <CardContent>
+                                <Table className="font-mono border-2">
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="font-bold text-white">Database Data</TableHead>
+                                            <TableHead className="font-bold text-white">Stripe Data</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow>
+                                            {/* ——— Database column ——— */}
+                                            <TableCell className="space-y-2">
+                                                {renderField("Name", pkg.name, "match")}
+                                                {renderField("Slug", pkg.slug, "match")}
+                                                {renderField("Price", `$${pkg.price.toFixed(2)}`, "match")}
+                                                {renderField("Theme", themeName, "match")}
+                                                {renderField("Tier", tierName, "match")}
+                                                {renderField("Allowed Genres", pkg.allowed_genres.join(", "), "match")}
+                                                {renderField("Created At", pkg.created_at, "match")}
+                                                {renderField("Updated At", pkg.updated_at, "match")}
+                                            </TableCell>
 
-                                {/* Stripe side */}
-                                <div className="flex flex-col gap-2">
-                                    <h3 className="font-semibold text-sm mb-1">Stripe</h3>
-                                    {renderField("Name", stripe?.name ?? "—", status.name)}
-                                    {renderField("Slug", stripe?.metadata?.slug ?? "—", status.slug)}
-                                    {renderField(
-                                        "Price",
-                                        stripe?.price?.unit_amount !== null && stripe?.price?.unit_amount !== undefined
-                                            ? `$${(stripe.price.unit_amount / 100).toFixed(2)}`
-                                            : "—",
-                                        status.price
-                                    )}
-                                    {renderField("Supports Themed", stripe?.metadata?.supports_themed ?? "—", status.supports_themed)}
-                                    {renderField("Supports Regular", stripe?.metadata?.supports_regular ?? "—", status.supports_regular)}
-                                    {renderField("Theme ID", stripe?.metadata?.theme_id ?? "—", status.theme_id)}
-                                    {renderField("Tier", stripe?.metadata?.package_tier ?? "—", status.package_tier)}
-                                </div>
+                                            {/* ——— Stripe column ——— */}
+                                            <TableCell className="space-y-2">
+                                                {renderField(
+                                                    "Name",
+                                                    stripe?.name ?? "—",
+                                                    status.name
+                                                )}
+                                                {renderField(
+                                                    "Slug",
+                                                    stripe?.metadata?.slug ?? "—",
+                                                    status.slug
+                                                )}
+                                                {renderField(
+                                                    "Price",
+                                                    stripe?.price
+                                                        ? `$${(stripe.price.unit_amount! / 100).toFixed(2)}`
+                                                        : "—",
+                                                    status.price
+                                                )}
+                                                {renderField(
+                                                    "Theme",
+                                                    stripe?.metadata?.theme ?? "—",
+                                                    status.theme
+                                                )}
+                                                {renderField(
+                                                    "Tier",
+                                                    stripe?.metadata?.package_tier ?? "—",
+                                                    status.package_tier
+                                                )}
+                                                {renderField(
+                                                    "Allowed Genres",
+                                                    stripe?.metadata?.allowed_genres ?? "—",
+                                                    status.allowed_genres
+                                                )}
+                                                {renderField(
+                                                    "Created At",
+                                                    stripe?.metadata?.created_at ?? "—",
+                                                    status.created_at
+                                                )}
+                                                {renderField(
+                                                    "Updated At",
+                                                    stripe?.metadata?.updated_at ?? "—",
+                                                    status.updated_at
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
                             </CardContent>
-
                             {hasMismatch && (
                                 <div className="rounded-md bg-red-200 px-4 py-2 text-red-900 font-medium">
                                     One or more fields are missing or mismatched. Please sync this package.
@@ -147,13 +225,13 @@ export default function StripePackagesSyncClient() {
     // Field renderer
     function renderField(label: string, value: string, status: FieldStatus) {
         const bg = {
-            match: "bg-green-500/40",
+            match: "bg-green-500/30",
             mismatch: "bg-red-500/40",
             missing: "bg-muted",
         }[status]
         return (
-            <div className={cn("text-sm rounded-md px-3 py-2", bg)}>
-                <span className="font-medium">{label}:</span> <span className="ml-1">{value}</span>
+            <div className={cn("text-sm  px-3 py-1.5", bg)}>
+                <span className="font-semibold">{label}:</span> <span className="ml-1">{value}</span>
             </div>
         )
     }
@@ -164,29 +242,36 @@ export default function StripePackagesSyncClient() {
             name: "missing",
             slug: "missing",
             price: "missing",
-            supports_themed: "missing",
-            supports_regular: "missing",
-            theme_id: "missing",
+            theme: "missing",
             package_tier: "missing",
+            allowed_genres: "missing",
+            created_at: "missing",
+            updated_at: "missing",
         }
     }
 
     // Compare DB vs. Stripe
-    function determineStatuses(pkg: Packages, stripe: StripeProductWithPrice): SyncStatus {
+    function determineStatuses(
+        pkg: Packages,
+        stripe: StripeProductWithPrice,
+        themeName: string,
+        tierName: string
+    ): SyncStatus {
         const cmp = (a?: string, b?: string): FieldStatus => (a === b ? "match" : "mismatch")
 
         return {
             name: cmp(pkg.name, stripe?.name),
-            slug: cmp(pkg.slug, stripe?.metadata.slug),
+            slug: cmp(pkg.slug, stripe?.metadata?.slug),
             price: stripe?.price
-                ? stripe.price.unit_amount !== null && Math.round(pkg.price * 100).toString() === stripe.price.unit_amount.toString()
+                ? (stripe.price.unit_amount === Math.round(pkg.price * 100)
                     ? "match"
-                    : "mismatch"
+                    : "mismatch")
                 : "missing",
-            supports_themed: cmp(pkg.supports_themed ? "true" : "false", stripe?.metadata.supports_themed),
-            supports_regular: cmp(pkg.supports_regular ? "true" : "false", stripe?.metadata.supports_regular),
-            theme_id: cmp(pkg.theme_id?.toString(), stripe?.metadata.theme_id),
-            package_tier: cmp(pkg.package_tier?.toString(), stripe?.metadata.package_tier),
+            theme: cmp(themeName, stripe?.metadata?.theme),
+            package_tier: cmp(tierName, stripe?.metadata?.package_tier),
+            allowed_genres: cmp(pkg.allowed_genres.join(", "), stripe?.metadata?.allowed_genres),
+            created_at: cmp(pkg.created_at, stripe?.metadata?.created_at),
+            updated_at: cmp(pkg.updated_at, stripe?.metadata?.updated_at),
         }
     }
 }

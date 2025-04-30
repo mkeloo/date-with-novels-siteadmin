@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server"
 import Stripe from "stripe"
 import { getPackagesById } from "./packages"
 import { getPackageMediaFiles } from "./image_uploader"
+import { getThemeById } from "./themes"
+import { getPackageTierById } from "./package_tier"
 
 // initialize Stripe client with correct API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -168,12 +170,6 @@ export async function getStripeProductById(
 /**
  * syncPackageToStripe
  *  - if no sync record exists, create product+price
- *  - if sync exists, update product then issue a new price
- *  - upsert into package_stripe_sync ON package_id
- */
-/**
- * syncPackageToStripe
- *  - if no sync record exists, create product+price
  *  - if sync exists, update product then issue a new price if the amount changed
  *  - upsert into package_stripe_sync ON package_id
  */
@@ -183,6 +179,12 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
     const pkg = await getPackagesById(packageId);
     const media = await getPackageMediaFiles(pkg.id);
     const images = media.slice(0, 3).map((m) => m.src);
+
+    const themeData = pkg.theme_id !== null ? await getThemeById(pkg.theme_id) : null;
+    const tierData = await getPackageTierById(pkg.package_tier);
+
+    const themeName = themeData?.theme_name ?? "None";
+    const tierName = tierData?.name ?? "None";
 
     const { data: existingSync } = await (await supabase)
         .from("package_stripe_sync")
@@ -202,10 +204,12 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
                 url: `https://datewithnovels.com/packages/${pkg.slug}`,
                 metadata: {
                     slug: pkg.slug,
-                    theme_id: pkg.theme_id?.toString() ?? "null",
-                    package_tier: pkg.package_tier?.toString() ?? "null",
-                    supports_themed: pkg.supports_themed ? "true" : "false",
-                    supports_regular: pkg.supports_regular ? "true" : "false",
+                    name: pkg.name,
+                    theme: themeName ? themeName.toString() : null,
+                    package_tier: tierName?.toString() ?? null,
+                    allowed_genres: pkg.allowed_genres.join(", "),
+                    created_at: pkg.created_at,
+                    updated_at: pkg.updated_at,
                 },
             });
         } else {
@@ -217,10 +221,12 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
                 shippable: true,
                 metadata: {
                     slug: pkg.slug,
-                    theme_id: pkg.theme_id?.toString() ?? "null",
-                    package_tier: pkg.package_tier?.toString() ?? "null",
-                    supports_themed: pkg.supports_themed ? "true" : "false",
-                    supports_regular: pkg.supports_regular ? "true" : "false",
+                    name: pkg.name,
+                    theme: themeName ? themeName.toString() : null,
+                    package_tier: tierName?.toString() ?? null,
+                    allowed_genres: pkg.allowed_genres.join(", "),
+                    created_at: pkg.created_at,
+                    updated_at: pkg.updated_at,
                 },
             });
             productId = created.id;
@@ -234,14 +240,12 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
             if (currentStripePrice.unit_amount === Math.round(pkg.price * 100)) {
                 shouldCreateNewPrice = false; // Price matches; no new price needed
             } else {
-                // Deactivate old price if amount changed
                 await stripe.prices.update(currentStripePriceId, { active: false });
             }
         }
 
         let newPriceId = currentStripePriceId;
 
-        // Only create new price if local price changed
         if (shouldCreateNewPrice) {
             const newPrice = await stripe.prices.create({
                 product: productId!,
@@ -251,7 +255,6 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
             newPriceId = newPrice.id;
         }
 
-        // Upsert sync record
         const { error } = await (await supabase)
             .from("package_stripe_sync")
             .upsert(
@@ -274,7 +277,6 @@ export async function syncPackageToStripe(packageId: number): Promise<void> {
     } catch (err: any) {
         console.error("Stripe sync failed:", err);
 
-        // fallback: mark as FAILED
         await (await supabase)
             .from("package_stripe_sync")
             .upsert(

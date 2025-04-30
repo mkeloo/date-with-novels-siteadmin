@@ -22,6 +22,18 @@ export async function getThemes(): Promise<Theme[]> {
     return data as Theme[]
 }
 
+// Get a theme by ID
+export async function getThemeById(id: number): Promise<Theme | null> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from("themes")
+        .select("*")
+        .eq("id", id)
+        .single()
+    if (error) throw error
+    return data as Theme
+}
+
 // Create a theme
 export async function createTheme(
     theme_name: string,
