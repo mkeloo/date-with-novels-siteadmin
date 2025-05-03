@@ -54,6 +54,7 @@ type FieldChange = {
 
 type DialogData = Packages & {
     changes?: Record<string, FieldChange>
+    error?: string
 }
 
 export default function PackagesFormClient({ mode, packageId, onPackageCreated }: PackagesFormClientProps) {
@@ -77,6 +78,7 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
 
     // For holding field-specific error messages
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+    const [showErrorDialog, setShowErrorDialog] = useState(false);
 
     const [showDialog, setShowDialog] = useState(false)
     const [originalData, setOriginalData] = useState<Packages | null>(null)
@@ -210,10 +212,29 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
             setFormErrors(errors)
             return
         }
-        // Clear any previous errors if validation passes
+
+        // Clear validation errors
         setFormErrors({})
 
         try {
+            // INSERT THE existingSimilar check RIGHT HERE (BEFORE createPackages)
+            const existingPackages = await (await import("../../../app/actions/siteadmin/packages")).getPackages();
+            const similarPackage = existingPackages.find((pkg) =>
+                pkg.slug === slug ||
+                pkg.slug === `${slug}-${theme.toLowerCase().replace(/\s+/g, '-')}`
+            );
+
+            if (similarPackage) {
+                setDialogData({
+                    ...payload,
+                    slug,
+                    is_enabled: isEnabled,
+                    error: `A similar package already exists with slug: ${similarPackage.slug}. Please choose a more unique name.`
+                } as any);
+                setShowErrorDialog(true);
+                return; // abort submit
+            }
+
             if (mode === "edit" && packageId && originalData) {
                 const { updatePackages } = await import("../../../app/actions/siteadmin/packages")
                 await updatePackages(parseInt(packageId), payload)
@@ -225,21 +246,40 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                     return acc
                 }, {} as Record<string, FieldChange>)
                 setDialogData({ ...originalData, ...payload, changes })
+                setShowDialog(true)
             } else {
-                const { createPackages } = await import("../../../app/actions/siteadmin/packages")
-                const newTier = await createPackages(payload)
-                setDialogData({
-                    ...newTier,
-                    updated_at: new Date().toISOString(),
-                })
-                onPackageCreated?.(newTier.id)
+                try {
+                    const { createPackages } = await import("../../../app/actions/siteadmin/packages")
+                    const newTier = await createPackages(payload)
+                    setDialogData({
+                        ...newTier,
+                        updated_at: new Date().toISOString(),
+                    })
+                    onPackageCreated?.(newTier.id)
+                    setShowDialog(true)
+                } catch (error: any) {
+                    console.error("Submission error:", error)
+
+                    const errMsg = (error?.message || "").includes("duplicate key value")
+                        ? `A package with this slug already exists in the database (constraint violation).\nOriginal DB error: ${error.message}`
+                        : `An unexpected error occurred: ${error.message}`
+
+                    setDialogData({
+                        ...payload,
+                        slug,
+                        is_enabled: isEnabled,
+                        error: errMsg
+                    } as any)
+                    setShowErrorDialog(true);
+                }
             }
-            setShowDialog(true)
-        } catch (error) {
-            console.error("Submission error:", error)
+        } catch (outerError) {
+            console.error("Unexpected error in handleSubmit:", outerError)
         }
     }
 
+
+    // Loading state
     if (loading) {
         return <LoadingPageSkeleton />
     }
@@ -457,6 +497,7 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                 <p className="text-xs text-muted-foreground">
                                     Last Updated: {new Date(dialogData.updated_at).toLocaleString()}
                                 </p>
+
                             </div>
                             <div className="flex justify-end">
                                 <Button onClick={() => router.push("/dashboard/product-settings/packages")}>
@@ -465,6 +506,22 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                             </div>
                         </>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+                <VisuallyHidden.Root>
+                    <DialogTitle>Error</DialogTitle>
+                </VisuallyHidden.Root>
+                <DialogContent className="max-w-lg space-y-4">
+                    {dialogData?.error && (
+                        <div className="rounded-md bg-red-100 text-red-700 p-3 text-sm font-semibold whitespace-pre-wrap">
+                            {dialogData.error}
+                        </div>
+                    )}
+                    <div className="flex justify-end">
+                        <Button onClick={() => setShowErrorDialog(false)}>Close</Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </form>
