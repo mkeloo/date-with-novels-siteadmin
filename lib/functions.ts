@@ -111,3 +111,17 @@ export function generateRandomEmojiScatter(
     return scatter
 }
 
+
+
+export const getTierColor = (tierName: string) => {
+    switch (tierName) {
+        case "Themed Edition":
+            return "bg-pink-200 dark:bg-pink-900 text-pink-900 dark:text-pink-100"
+        case "First Chapter Edition":
+            return "bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-100"
+        case "Classic Edition":
+            return "bg-green-200 dark:bg-green-900 text-green-900 dark:text-green-100"
+        default:
+            return "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+    }
+}
