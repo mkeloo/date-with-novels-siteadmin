@@ -25,7 +25,7 @@ export function NavHeader() {
             {/* Mobile: show dropdown menu on small screens */}
             <div className="flex lg:hidden w-full justify-end">
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild className="w-8 h-8 rounded-sm bg-blue-800 dark:text-white">
+                    <DropdownMenuTrigger asChild className="w-8 h-8 rounded-sm bg-blue-800 text-white">
                         <SlidersHorizontal className="p-2 h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-40">
