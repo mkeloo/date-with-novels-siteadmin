@@ -3,6 +3,14 @@
 import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
 
+import Stripe from "stripe"
+
+
+// initialize Stripe client with correct API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2025-03-31.basil",
+})
+
 // Reusable Package Tier type
 export type Packages = {
     id: number
@@ -108,15 +116,51 @@ export async function updatePackages(
     revalidatePath("/siteadmin/packages")
 }
 
-// Delete a package tier
+
+// Delete a package and its associated Stripe product
+// This function is responsible for deleting a package and its associated Stripe product.
+// It first retrieves the Stripe product ID from the database, then archives all prices associated with that product.
+// Finally, it archives the product itself and removes the package from the database.
 export async function deletePackages(id: number) {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
-    const { error } = await supabase
-        .from("packages")
-        .delete()
-        .eq("id", id)
+    // ── 1. get stripe_product_id ────────────────────────────────
+    const { data: syncRecord } = await supabase
+        .from("package_stripe_sync")
+        .select("stripe_product_id")
+        .eq("package_id", id)
+        .single();
 
-    if (error) throw error
-    revalidatePath("/siteadmin/packages")
+    const stripeProductId = syncRecord?.stripe_product_id;
+
+    if (stripeProductId) {
+        try {
+            // ── 2. archive every price ──────────────────────────────
+            const prices = await stripe.prices.list({
+                product: stripeProductId,
+                limit: 100,
+            });
+
+            for (const price of prices.data) {
+                if (price.active) {
+                    await stripe.prices.update(price.id, { active: false });
+                    console.log(`Archived price ${price.id}`);
+                }
+            }
+
+            // ── 3. archive the product itself ───────────────────────
+            await stripe.products.update(stripeProductId, { active: false });
+            console.log(`Archived Stripe product ${stripeProductId}`);
+        } catch (err) {
+            console.error(`Stripe clean‑up failed for ${stripeProductId}:`, err);
+        }
+    } else {
+        console.warn("Package had no Stripe sync row – skipping Stripe clean‑up.");
+    }
+
+    // ── 4. remove sync + package locally ───────────────────────
+    await supabase.from("package_stripe_sync").delete().eq("package_id", id);
+    await supabase.from("packages").delete().eq("id", id);
+
+    revalidatePath("/siteadmin/packages");
 }
