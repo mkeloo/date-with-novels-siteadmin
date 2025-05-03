@@ -27,7 +27,7 @@ export type Packages = {
 }
 
 
-// Get all package tiers
+// Get all packages
 export async function getPackages(): Promise<Packages[]> {
     const supabase = await createClient()
 
@@ -40,7 +40,7 @@ export async function getPackages(): Promise<Packages[]> {
     return data as Packages[]
 }
 
-// Get a single package tier by ID
+// Get a single package by ID
 export async function getPackagesById(id: number): Promise<Packages> {
     const supabase = await createClient()
 
@@ -54,7 +54,7 @@ export async function getPackagesById(id: number): Promise<Packages> {
     return data as Packages
 }
 
-// Get a single package tier by slug
+// Get a single package by slug
 export async function getPackagesBySlug(slug: string): Promise<Packages | null> {
     const supabase = await createClient()
 
@@ -73,7 +73,7 @@ export async function getPackagesBySlug(slug: string): Promise<Packages | null> 
     return data as Packages
 }
 
-// Create a new package tier
+// Create a new package
 export async function createPackages(
     payload: Omit<Packages, "id" | "created_at" | "updated_at">
 ): Promise<Packages> {
@@ -92,7 +92,7 @@ export async function createPackages(
     return data as Packages
 }
 
-// Update an existing package tier
+// Update an existing package
 export async function updatePackages(
     id: number,
     updates: Partial<Omit<Packages, "id" | "created_at" | "updated_at" | "slug">>
