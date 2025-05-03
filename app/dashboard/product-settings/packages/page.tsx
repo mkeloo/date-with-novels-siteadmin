@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
-import { getPackages, deletePackages, Packages } from "@/app/actions/siteadmin/packages"
+import { getPackages, deletePackages, Packages, deleteOrphanedPackageData } from "@/app/actions/siteadmin/packages"
 import { getPackageTierById } from "@/app/actions/siteadmin/package_tier"
 import LucideIcon from "@/components/reusable/LucideIcon"
 import PackageMoreInfoDialog from "@/components/reusable/Dialogs/PackageMoreInfoDialog"
 import { cn } from "@/lib/utils"
 import { getTierColor } from "@/lib/functions"
+import { toast } from "sonner";
 
 
 export default function PackagesOverviewPage() {
@@ -60,12 +61,33 @@ export default function PackagesOverviewPage() {
     const handleDelete = async (id: number) => {
         try {
             await deletePackages(id)
-            setPackages((prev) => prev.filter((pkg) => pkg.id !== id)) // ✅ remove from local state
+            setPackages((prev) => prev.filter((pkg) => pkg.id !== id)) // remove from local state
             setConfirmDeleteId(null)
         } catch (err) {
             console.error("Failed to delete package:", err)
         }
     }
+
+    // new helper
+    const handleCleanOrphans = async () => {
+        const promise = deleteOrphanedPackageData()
+            .then(async () => {
+                const freshPackages = await getPackages();
+                setPackages(freshPackages);
+            });
+
+        toast.promise(promise, {
+            loading: "Cleaning orphaned data...",
+            success: "Orphaned data cleaned!",
+            error: "Failed to clean orphaned data.",
+        });
+
+        try {
+            await promise;
+        } catch (err) {
+            console.error("Orphan clean‑up failed:", err);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -74,13 +96,21 @@ export default function PackagesOverviewPage() {
                 <h1 className="text-2xl font-bold">Packages</h1>
                 <div className="flex items-center gap-2">
                     <Link href="/dashboard/product-settings/packages/package-tier-form?mode=create">
-                        <Button variant="outline">Create New Package</Button>
+                        <Button variant="info">Create New Package</Button>
                     </Link>
                     <Button
-                        variant={showDelete ? "destructive" : "outline"}
+                        disableLoader
+                        variant={showDelete ? "purple" : "destructive"}
                         onClick={() => setShowDelete((prev) => !prev)}
                     >
                         {showDelete ? "Cancel Delete" : "Delete Packages"}
+                    </Button>
+                    <Button
+                        disableLoader
+                        variant="warning"
+                        onClick={handleCleanOrphans}
+                    >
+                        Clean Orphaned Data
                     </Button>
                 </div>
             </div>
