@@ -91,7 +91,7 @@ export default function PackagesOverviewPage() {
                     .sort(([tierA], [tierB]) => Number(tierA) - Number(tierB))
                     .map(([tierId, tierPackages]) => (
                         <div key={tierId} className="space-y-4">
-                            <h2 className={cn("w-fit text-xl font-bold mb-4 py-2 px-4 rounded-md", getTierColor(packageTierName[Number(tierId)] || ""))}>
+                            <h2 className={cn("w-fit text-lg font-bold mb-4 py-1.5 px-4 rounded-md", getTierColor(packageTierName[Number(tierId)] || ""))}>
                                 {packageTierName[Number(tierId)] || `Tier ${tierId}`} Packages
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
