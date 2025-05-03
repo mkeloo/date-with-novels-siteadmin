@@ -45,6 +45,7 @@ type PackagesFormClientProps = {
     mode: "create" | "edit"
     packageId: string | null
     onPackageCreated?: (id: number) => void
+    onGoToMediaTab?: () => void // Callback to navigate to the media tab
 }
 
 type FieldChange = {
@@ -57,7 +58,7 @@ type DialogData = Packages & {
     error?: string
 }
 
-export default function PackagesFormClient({ mode, packageId, onPackageCreated }: PackagesFormClientProps) {
+export default function PackagesFormClient({ mode, packageId, onPackageCreated, onGoToMediaTab }: PackagesFormClientProps) {
     const [loading, setLoading] = useState(mode === "edit")
     const [isEnabled, setIsEnabled] = useState(false)
     const [packageTierId, setPackageTierId] = useState<number | null>(null)
@@ -83,6 +84,10 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
     const [showDialog, setShowDialog] = useState(false)
     const [originalData, setOriginalData] = useState<Packages | null>(null)
     const [dialogData, setDialogData] = useState<DialogData | null>(null)
+
+    // For managing the active tab outside of the form
+    const [activeTab, setActiveTab] = useState("info")
+
 
     const router = useRouter()
 
@@ -220,8 +225,11 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
             // INSERT THE existingSimilar check RIGHT HERE (BEFORE createPackages)
             const existingPackages = await (await import("../../../app/actions/siteadmin/packages")).getPackages();
             const similarPackage = existingPackages.find((pkg) =>
-                pkg.slug === slug ||
-                pkg.slug === `${slug}-${theme.toLowerCase().replace(/\s+/g, '-')}`
+                pkg.id !== parseInt(packageId || "0") && // exclude self
+                (
+                    pkg.slug === slug ||
+                    pkg.slug === `${slug}-${theme.toLowerCase().replace(/\s+/g, '-')}`
+                )
             );
 
             if (similarPackage) {
@@ -499,9 +507,12 @@ export default function PackagesFormClient({ mode, packageId, onPackageCreated }
                                 </p>
 
                             </div>
-                            <div className="flex justify-end">
-                                <Button onClick={() => router.push("/dashboard/product-settings/packages")}>
+                            <div className="flex justify-end gap-4">
+                                <Button disableLoader onClick={() => router.push("/dashboard/product-settings/packages")}>
                                     Go Back to Overview
+                                </Button>
+                                <Button disableLoader onClick={onGoToMediaTab}>
+                                    Go to Package Media
                                 </Button>
                             </div>
                         </>

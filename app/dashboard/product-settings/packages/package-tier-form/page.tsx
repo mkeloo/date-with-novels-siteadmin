@@ -12,6 +12,8 @@ import PackageMediaForm from "@/components/siteadmin/Pages/PackageMediaForm"
 export default function PackageTierFormPage() {
     const searchParams = useSearchParams()
     const router = useRouter()
+    const [activeTab, setActiveTab] = useState("info")
+
 
     const mode = (searchParams.get("mode") === "edit" ? "edit" : "create") as "create" | "edit"
     const id = searchParams.get("id") || null
@@ -24,7 +26,7 @@ export default function PackageTierFormPage() {
     }
 
     return (
-        <Tabs defaultValue="info" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <Card className="w-full flex flex-col items-center justify-center gap-4 p-4 mb-2">
                 <TabsList className="my-4 rounded-xl bg-muted p-1 mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 md:gap-2">
                     <TabsTrigger
@@ -49,20 +51,29 @@ export default function PackageTierFormPage() {
             </Card>
 
             <TabsContent value="info" className="tab-transition">
-                <PackageTierFormClient mode={mode} packageId={id} onPackageCreated={handlePackageCreated} />
+                <PackageTierFormClient mode={mode} packageId={id} onPackageCreated={handlePackageCreated} onGoToMediaTab={() => setActiveTab("media")} // 🟢 pass callback down
+                />
             </TabsContent>
 
-            {packageId && (
-                <TabsContent value="media" className="tab-transition">
+            <TabsContent value="media" className="tab-transition">
+                {packageId ? (
                     <PackageMediaForm mode={mode} packageId={packageId} />
-                </TabsContent>
-            )}
+                ) : (
+                    <div className="p-4 text-center text-base text-muted-foreground">
+                        Please  <span className="font-bold">create and save the package first</span> in the <span className="font-bold">Package Details Tab</span> before <span className="font-bold">managing media uploads</span>.
+                    </div>
+                )}
+            </TabsContent>
 
-            {packageId && (
-                <TabsContent value="description" className="tab-transition">
+            <TabsContent value="description" className="tab-transition">
+                {packageId ? (
                     <PackageDescriptionContentForm mode={mode} packageId={packageId} />
-                </TabsContent>
-            )}
+                ) : (
+                    <div className="p-4 text-center text-base text-muted-foreground">
+                        Please  <span className="font-bold">create and save the package first</span> in the <span className="font-bold">Package Details Tab</span> before <span className="font-bold">adding description content</span>.
+                    </div>
+                )}
+            </TabsContent>
         </Tabs>
     )
 }
