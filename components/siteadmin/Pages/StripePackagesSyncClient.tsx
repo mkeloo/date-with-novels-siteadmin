@@ -10,6 +10,7 @@ import {
     syncPackageToStripe,
 } from "@/app/actions/siteadmin/syncUnsyncedPackagesStripe"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
     Table,
     TableHeader,
@@ -45,6 +46,19 @@ export default function StripePackagesSyncClient() {
     const [themeMap, setThemeMap] = useState<Record<number, string>>({})
     const [tierMap, setTierMap] = useState<Record<number, string>>({})
 
+    /* helper: tier‑id → readable name */
+    const tierName = (id: number) => tierMap[id] ?? `Tier ${id}`
+
+
+    /* group once so we can iterate twice */
+    const grouped = packages.reduce<Record<number, Packages[]>>((acc, p) => {
+        (acc[p.package_tier] ??= []).push(p)
+        return acc
+    }, {})
+
+    /* sorted tier keys */
+    const tierKeys = Object.keys(grouped).map(Number).sort((a, b) => a - b)
+
     // on mount: load packages + their Stripe sync + product
     useEffect(() => {
         async function loadAll() {
@@ -78,9 +92,10 @@ export default function StripePackagesSyncClient() {
 
                 if (pkg.package_tier != null) {
                     const tier = await getPackageTierById(pkg.package_tier)
-                    tiers[pkg.id] = tier?.name ?? "—"
-                } else {
-                    tiers[pkg.id] = "—"
+                    const name = tier?.name ?? `Tier ${pkg.package_tier}`
+
+                    tiers[pkg.package_tier] = name   // key by tier‑ID (works for Tabs)
+                    tiers[pkg.id] = name   // (optional) keep old key for table rows
                 }
             }))
 
@@ -125,6 +140,139 @@ export default function StripePackagesSyncClient() {
                 </Button> */}
             </Card>
 
+            {/* ───────── Tabs per Package‑Tier ───────── */}
+            <Tabs defaultValue={tierKeys[0]?.toString()} className="mt-6 space-y-6">
+
+                {/* tab bar */}
+                <TabsList className="mx-auto flex flex-wrap justify-center gap-2 rounded-xl bg-muted p-1">
+                    {tierKeys.map(id => (
+                        <TabsTrigger
+                            key={id}
+                            value={id.toString()}
+                            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-xl px-6 py-2 font-semibold text-sm md:text-base"
+                        >
+                            {tierName(id)}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+
+                {/* tab panels */}
+                {tierKeys.map(id => (
+                    <TabsContent key={id} value={id.toString()} className="space-y-6">
+                        {grouped[id].map(pkg => {
+                            const stripe = stripeData[pkg.id]
+                            const themeName = themeMap[pkg.id] || "—"
+                            const tierName = tierMap[pkg.id] || "—"
+                            const status: SyncStatus = stripe
+                                ? determineStatuses(pkg, stripe, themeName, tierName)
+                                : createMissingStatuses()
+
+                            const hasMismatch = Object.values(status).some((s) => s !== "match")
+
+                            return (
+                                <Card key={pkg.id} className="p-4 space-y-4">
+                                    <CardHeader className="flex justify-between items-center p-0">
+                                        <CardTitle>{pkg.name}</CardTitle>
+                                        <Button size="sm" onClick={() => handleSync(pkg)} disabled={isPending}>
+                                            Sync
+                                        </Button>
+                                    </CardHeader>
+
+                                    <CardContent className="p-0">
+                                        <Table className="table-fixed w-full font-mono border-2">
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-1/2 font-semibold text-white px-3">
+                                                        Database
+                                                    </TableHead>
+                                                    <TableHead className="w-1/2 font-semibold text-white px-3">
+                                                        Stripe
+                                                    </TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    {/* ——— Database column ——— */}
+                                                    <TableCell className="space-y-2 whitespace-normal break-words">
+                                                        {renderField("Name", pkg.name, "match")}
+                                                        {renderField("Slug", pkg.slug, "match")}
+                                                        {renderField("Price", `$${pkg.price.toFixed(2)}`, "match")}
+                                                        {renderField("Theme", themeName, "match")}
+                                                        {renderField("Tier", tierName, "match")}
+                                                        {renderField("Allowed Genres", pkg.allowed_genres.join(", "), "match")}
+                                                        {renderField("Created At", pkg.created_at, "match")}
+                                                        {renderField("Updated At", pkg.updated_at, "match")}
+                                                    </TableCell>
+
+                                                    {/* ——— Stripe column ——— */}
+                                                    <TableCell className="space-y-2 whitespace-normal break-words">
+                                                        {renderField(
+                                                            "Name",
+                                                            stripe?.name ?? "—",
+                                                            status.name
+                                                        )}
+                                                        {renderField(
+                                                            "Slug",
+                                                            stripe?.metadata?.slug ?? "—",
+                                                            status.slug
+                                                        )}
+                                                        {renderField(
+                                                            "Price",
+                                                            stripe?.price
+                                                                ? `$${(stripe.price.unit_amount! / 100).toFixed(2)}`
+                                                                : "—",
+                                                            status.price
+                                                        )}
+                                                        {renderField(
+                                                            "Theme",
+                                                            stripe?.metadata?.theme ?? "—",
+                                                            status.theme
+                                                        )}
+                                                        {renderField(
+                                                            "Tier",
+                                                            stripe?.metadata?.package_tier ?? "—",
+                                                            status.package_tier
+                                                        )}
+                                                        {renderField(
+                                                            "Allowed Genres",
+                                                            stripe?.metadata?.allowed_genres ?? "—",
+                                                            status.allowed_genres
+                                                        )}
+                                                        {renderField(
+                                                            "Created At",
+                                                            stripe?.metadata?.created_at ?? "—",
+                                                            status.created_at
+                                                        )}
+                                                        {renderField(
+                                                            "Updated At",
+                                                            stripe?.metadata?.updated_at ?? "—",
+                                                            status.updated_at
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+
+                                    {hasMismatch && (
+                                        <div className="rounded-md bg-red-200 px-4 py-2 text-red-900 font-medium">
+                                            One or more fields are missing or mismatched. Please sync this package.
+                                        </div>
+                                    )}
+                                </Card>
+                            )
+                        })}
+                    </TabsContent>
+                ))}
+            </Tabs>
+
+            {/* ───────── All Packages ───────── */}
+            <Card className="p-4 flex justify-center items-start gap-y-2 bg-muted mt-8">
+                <h2 className="text-xl font-bold">All Packages</h2>
+                <p className="text-sm text-muted-foreground">
+                    This is a list of all packages in the database. You can sync them with Stripe by clicking the Sync button.
+                </p>
+            </Card>
             <div className="grid gap-4">
                 {packages.map((pkg) => {
                     const stripe = stripeData[pkg.id]
