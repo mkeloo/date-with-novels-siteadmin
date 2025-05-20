@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "../actions/auth";
+import { signOut } from "@/lib/auth-client"; // <-- BetterAuth signOut
 import { Ghost } from "lucide-react";
 
 export default function UnauthorizedPage() {

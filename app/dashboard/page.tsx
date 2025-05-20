@@ -54,7 +54,7 @@ export default function Page() {
 }
 
 
-import { buildTitle } from "@/lib/functions"
+import { buildTitle } from "@/utils/data/functions"
 import type { Metadata } from "next"
 import { Card } from "@/components/ui/card"
 

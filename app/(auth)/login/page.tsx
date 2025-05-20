@@ -1,98 +1,52 @@
 "use client";
-import React, { startTransition, useActionState, useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { signIn, signInWithGoogle } from "../../actions/auth";
+import { useRouter } from "next/navigation";
+import { FcGoogle } from "react-icons/fc";
+import { authClient } from "@/lib/auth-client";
 
-async function signInAction(
-    prevState: { error: string } | null,
-    formData: FormData
-) {
-    return await signIn(prevState, formData);
-}
+export default function AdminLogin() {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
-export default function LoginPage() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [state, formAction] = useActionState(signInAction, null);
-    const [email, setEmail] = useState("");
+    // Google login only!
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        setError(null);
 
-    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        if (value === "admin") {
-            setEmail("admin@siteadmin.com");
-        } else {
-            setEmail(value);
+        try {
+            // This will trigger a redirect; middleware will protect /dashboard for admin only.
+            await authClient.signIn.social({ provider: "google" });
+
+        } catch (err: any) {
+            setError("Sign in failed.");
+            setLoading(false);
         }
     };
-
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        setIsLoading(true);
-        // allow default action behavior to proceed (trigger useActionState)
-    };
-
-    // Stop loading when error state changes (or success, depending on your auth flow)
-    useEffect(() => {
-        if (state) {
-            setIsLoading(false);
-        }
-    }, [state]);
-
-
-    const handleGoogleLogin = () => {
-        startTransition(async () => {
-            await signInWithGoogle();
-        })
-    }
-
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-900">
             <form
-                action={formAction}
-                onSubmit={handleSubmit}
-                className="p-8 border-2 border-muted/80 rounded-xl shadow-lg w-100 h-40 bg-black"
+                className="p-8 border-2 border-muted/80 rounded-xl shadow-lg bg-black flex flex-col items-center gap-5 min-w-[320px] max-w-sm w-full"
+                onSubmit={e => e.preventDefault()}
             >
-                <h1 className="text-3xl font-bold mb-4 text-center">Admin Login</h1>
+                <h1 className="text-3xl font-bold mb-4 text-center text-white">Admin Login</h1>
+                {error && (
+                    <p className="text-red-500 bg-red-200 p-2 rounded-md text-center w-full">{error}</p>
+                )}
                 <Button
                     type="button"
                     variant="outline"
-                    className="w-full text-base font-semibold border-2 !border-white shadow-md shadow-amber-100 bg-gradient-to-tr from-blue-500 via-green-700 to-cyan-500 text-white hover:scale-105 transition-transform duration-300 ease-in-out"
+                    className="w-full h-12 px-4 text-[1.06rem] font-bold shadow-md shadow-blue-500/20 bg-gradient-to-r from-blue-600/40 via-blue-800/40 to-cyan-600/40 text-white rounded-xl flex items-center justify-center gap-3 transition-all duration-150 hover:from-sky-500/90 hover:via-blue-500/90 hover:to-cyan-500/90 hover:scale-105 hover:shadow-lg active:scale-95 border-none"
                     onClick={handleGoogleLogin}
+                    disabled={loading}
                 >
-                    Login
+                    <div className="flex items-center justify-center p-1 bg-white rounded-lg shadow-md shadow-gray-300">
+                        <FcGoogle className="!w-6 !h-6" />
+                    </div>
+                    {loading ? "Signing in..." : "Sign in with Google"}
                 </Button>
-
-
-                {/* Email / Password */}
-                {/* <div className="space-y-4">
-                    <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            value={email}
-                            onChange={handleEmailChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" name="password" type="password" required />
-                    </div>
-
-
-                    {state?.error && (
-                        <p className="text-red-700 bg-red-200 p-2 rounded-md text-center">
-                            {state.error}
-                        </p>
-                    )}
-                    <Button loading={isLoading} type="submit" className="w-full">
-                        Log In
-                    </Button>
-                </div> */}
             </form>
         </div>
     );

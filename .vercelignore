@@ -1,0 +1,6 @@
+drizzle.config.ts
+drizzle.config.js
+drizzle/migrations/
+*.sql
+.env
+scripts/

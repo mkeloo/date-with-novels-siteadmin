@@ -1,6 +1,6 @@
 "use client"
 
-import { THEMES } from "@/lib/themes"
+import { THEMES } from "@/utils/data/themes"
 import { useThemeConfig } from "@/components/active-theme"
 import {
     Select,

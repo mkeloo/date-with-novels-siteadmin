@@ -28,7 +28,7 @@ import {
     SidebarRail,
     SidebarSeparator,
 } from "@/components/ui/sidebar"
-import { data } from "@/lib/sidebarData"
+import { data } from "@/utils/data/sidebarData"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (

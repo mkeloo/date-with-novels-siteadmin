@@ -12,7 +12,7 @@ import { getPackageTierById } from "@/app/actions/siteadmin/package_tier"
 import LucideIcon from "@/components/reusable/LucideIcon"
 import PackageMoreInfoDialog from "@/components/reusable/Dialogs/PackageMoreInfoDialog"
 import { cn } from "@/lib/utils"
-import { getTierColor } from "@/lib/functions"
+import { getTierColor } from "@/utils/data/functions"
 import { toast } from "sonner";
 
 

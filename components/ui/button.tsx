@@ -91,7 +91,7 @@ function Button({
       onClick={handleClick}
       {...props}
     >
-      {(loading || isLoading) && <Loader2 className="mr-2 size-4 animate-spin" />}
+      {(loading || isLoading) && <Loader2 className="mr-2 size-6 animate-spin" />}
       {children}
     </Comp>
   )

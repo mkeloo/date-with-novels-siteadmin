@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { generateRandomEmojiScatter } from "@/lib/functions"
+import { generateRandomEmojiScatter } from "@/utils/data/functions"
 
 // A unified interface for the data required by the card component.
 export interface CategoryProps {

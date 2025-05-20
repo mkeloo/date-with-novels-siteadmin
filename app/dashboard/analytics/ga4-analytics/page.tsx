@@ -1,4 +1,4 @@
-import { buildTitle } from "@/lib/functions"
+import { buildTitle } from "@/utils/data/functions"
 import type { Metadata } from "next"
 import Ga4AnalyticsClient from "@/components/siteadmin/Pages/Ga4AnalyticsClient"
 

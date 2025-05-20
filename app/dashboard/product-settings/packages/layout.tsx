@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { buildTitle } from "@/lib/functions"
+import { buildTitle } from "@/utils/data/functions"
 
 export const metadata: Metadata = {
     title: buildTitle("Package Tiers"),

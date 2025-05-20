@@ -1,5 +1,5 @@
 import React from 'react'
-import { buildTitle } from "@/lib/functions"
+import { buildTitle } from "@/utils/data/functions"
 import type { Metadata } from "next"
 import StripePackagesSyncClient from '@/components/siteadmin/Pages/StripePackagesSyncClient'
 

@@ -7,7 +7,7 @@ export default function DummyComponentPage() {
 }
 
 
-import { buildTitle } from "@/lib/functions"
+import { buildTitle } from "@/utils/data/functions"
 import type { Metadata } from "next"
 import OrdersPage from './orders-page'
 
