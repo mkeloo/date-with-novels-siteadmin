@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/drizzle/db";
 import { schema, user as users } from "@/drizzle/schema/schema";
 import { nextCookies } from "better-auth/next-js";
+import { admin as adminPlugin } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 
 import { sendVerificationEmail } from "@/lib/send-verification-email";
@@ -45,22 +46,27 @@ export const auth = betterAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }
     },
-    plugins: [nextCookies()],
-    baseURL: process.env.NEXT_PUBLIC_BASE_URL,
+    plugins: [
+        nextCookies(),
+        adminPlugin({
+            adminRoles: ["admin"], // match your use-case!
+        })
+    ],
+    // baseURL: process.env.NEXT_PUBLIC_BASE_URL,
 
-    events: {
-        // Add type to ctx (or use 'any' for now)
-        async afterSignIn(ctx: any) {
-            const dbUserArr = await db
-                .select()
-                .from(users)
-                .where(eq(users.id, ctx.user.id))
-                .limit(1);
+    // events: {
+    //     // Add type to ctx (or use 'any' for now)
+    //     async afterSignIn(ctx: any) {
+    //         const dbUserArr = await db
+    //             .select()
+    //             .from(users)
+    //             .where(eq(users.id, ctx.user.id))
+    //             .limit(1);
 
-            const dbUser = dbUserArr[0];
-            if (dbUser) {
-                ctx.session.userTypeId = dbUser.userTypeId;
-            }
-        },
-    },
+    //         const dbUser = dbUserArr[0];
+    //         if (dbUser) {
+    //             ctx.session.userTypeId = dbUser.userTypeId;
+    //         }
+    //     },
+    // },
 })

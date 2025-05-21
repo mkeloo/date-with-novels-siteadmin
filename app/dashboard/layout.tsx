@@ -14,13 +14,27 @@ import { Card } from "@/components/ui/card"
 import TimeAndCalendar from "@/components/siteadmin/Navbar/TimeAndCalendar"
 import ViewTransitionWrapper from "@/components/reusable/ViewTransitionWrapper"
 
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
 export default async function DashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode
 }>) {
     const cookieStore = await cookies()
-    const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
+    const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+
+
+    // const session = await auth.api.getSession({ headers: await headers() });
+
+    // if (!session) {
+    //     redirect("/login");
+    // }
+    // if (session.user.role !== "admin") {
+    //     redirect("/unauthorized");
+    // }
 
     return (
         <SidebarProvider defaultOpen={defaultOpen}>

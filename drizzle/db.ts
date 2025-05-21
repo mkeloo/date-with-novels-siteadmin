@@ -10,9 +10,12 @@
 // export const db = drizzle(client);
 
 
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-const connectionString = process.env.DATABASE_URL!
-const client = postgres(connectionString, { prepare: false })
-export const db = drizzle(client)
+const client = postgres(process.env.DATABASE_URL!, {
+    ssl: { rejectUnauthorized: false },
+    // prepare: true  ← default, safe in session-mode
+});
+
+export const db = drizzle(client);

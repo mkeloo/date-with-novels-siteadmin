@@ -1,33 +1,49 @@
+// import { NextRequest, NextResponse } from "next/server";
+
+// export function middleware(request: NextRequest) {
+//     const unauthorized = request.cookies.get("unauthorized")?.value;
+//     const pathname = request.nextUrl.pathname;
+
+//     // 1️⃣ Block ALL routes (except /unauthorized) if unauthorized cookie is set
+//     if (unauthorized === "1" && pathname !== "/unauthorized") {
+//         const url = new URL("/unauthorized", request.url);
+//         const response = NextResponse.redirect(url);
+//         // Always refresh cookie
+//         response.cookies.set("unauthorized", "1", { path: "/", maxAge: 60 * 10 });
+//         return response;
+//     }
+
+//     // 2️⃣ Allow /unauthorized page always (even if cookie not set)
+//     return NextResponse.next();
+// }
+
+// export const config = {
+//     matcher: [
+//         "/((?!_next/static|_next/image|favicon.ico|assets|api).*)"
+//     ],
+// };
+
+// middleware.ts — only guard “am I logged in?” (edge-safe)
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-const PUBLIC_ROUTES = ["/login"];
-const ADMIN_ONLY_ROUTES = ["/dashboard"];
+export function middleware(req: NextRequest) {
+    const sessionToken = getSessionCookie(req);
+    const p = req.nextUrl.pathname;
 
-export function middleware(request: NextRequest) {
-    const pathname = request.nextUrl.pathname;
-    const sessionToken = getSessionCookie(request);
+    // // if you’re _not_ logged in, block everything but /login
+    // if (!sessionToken && p !== "/login") {
+    //     return NextResponse.redirect(new URL("/login", req.url));
+    // }
 
-    // Only check if session cookie exists, do NOT try to do DB access here.
-    if (!sessionToken && ADMIN_ONLY_ROUTES.some(route => pathname.startsWith(route))) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        return NextResponse.redirect(url);
-    }
-    // Optionally: If you want to prevent logged in users from seeing /login, do that here with just cookie.
+    // // if you _are_ logged in, block /login
+    // if (sessionToken && p === "/login") {
+    //     return NextResponse.redirect(new URL("/dashboard", req.url));
+    // }
+
     return NextResponse.next();
 }
 
 export const config = {
-    runtime: "nodejs",
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
-         */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    ],
-}
+    matcher: ["/((?!_next/static|_next/image|favicon.ico|api).*)"],
+};

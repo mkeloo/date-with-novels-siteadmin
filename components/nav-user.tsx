@@ -29,7 +29,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@/components/ui/sidebar"
-import { signOut } from "@/app/actions/auth"
+import { signOut } from "@/lib/auth-client";
 import { redirect } from "next/navigation"
 import { useState } from "react"
 import { Button } from "./ui/button"
